@@ -42,6 +42,11 @@ const silent = { silent: true } as const;
 
 export function PropertiesPanel({ editor }: { editor: FabricEditor }) {
   const { selected, revision } = editor;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+  }, [selected]);
 
   if (!selected) {
     return (
@@ -62,24 +67,26 @@ export function PropertiesPanel({ editor }: { editor: FabricEditor }) {
   const kind = objectKind(selected);
 
   return (
-    <div className="bnz-props" key={revision}>
+    <div className="bnz-props">
       <div className="bnz-props-id">
         <span className={`bnz-kind-pill bnz-kind-${kind}`}>{kind}</span>
         <span className="bnz-props-name">{selected.bnzName ?? kind}</span>
       </div>
 
-      <div className="bnz-props-scroll">
-        {isText(selected) && <TextProps editor={editor} obj={selected} />}
-        {isShapeKind(kind) && <ShapeProps editor={editor} obj={selected} />}
-        {isImage(selected) && <ImageProps editor={editor} obj={selected} />}
+      <div className="bnz-props-scroll" ref={scrollRef}>
+        <div key={revision}>
+          {isText(selected) && <TextProps editor={editor} obj={selected} />}
+          {isShapeKind(kind) && <ShapeProps editor={editor} obj={selected} />}
+          {isImage(selected) && <ImageProps editor={editor} obj={selected} />}
 
-        <ImageFitControl editor={editor} obj={selected} />
+          <ImageFitControl editor={editor} obj={selected} />
 
-        <CommonProps editor={editor} obj={selected} />
+          <CommonProps editor={editor} obj={selected} />
 
-        <span className="bnz-props-vsep" aria-hidden />
+          <span className="bnz-props-vsep" aria-hidden />
 
-        <DynamicControl editor={editor} obj={selected} />
+          <DynamicControl editor={editor} obj={selected} />
+        </div>
       </div>
 
       <button
@@ -480,13 +487,6 @@ function DynamicControl({ editor, obj }: { editor: FabricEditor; obj: EditorObje
     isDynamic &&
     editor.layers.filter((l) => l !== obj && l.bnzName === obj.bnzName).length > 0;
 
-  const apiLine =
-    type === "text"
-      ? `{ "name": "${key || "…"}", "text": "…" }`
-      : type === "image"
-        ? `{ "name": "${key || "…"}", "image_url": "https://…" }`
-        : `{ "name": "${key || "…"}", "color": "#…" }`;
-
   return (
     <div className={`bnz-dyn${isDynamic ? " is-on" : ""}`}>
       <label className="bnz-dyn-toggle" title="Fill this layer via the form & API">
@@ -554,11 +554,6 @@ function DynamicControl({ editor, obj }: { editor: FabricEditor; obj: EditorObje
               </div>
             </Field>
           )}
-
-          <div className="bnz-api-line">
-            <span className="bnz-field-label">API</span>
-            <code>{apiLine}</code>
-          </div>
 
           {duplicate && <p className="bnz-warn">⚠ Duplicate key — must be unique.</p>}
         </div>
