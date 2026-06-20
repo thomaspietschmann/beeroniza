@@ -18,7 +18,7 @@ ENV DATABASE_URL="postgresql://build:build@localhost:5432/build" \
 COPY package.json package-lock.json ./
 # Cache mount survives layer-cache invalidation (e.g. Coolify injecting changing
 # build ARGs), so a busted `npm ci` still reuses the download cache.
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --loglevel=error
 
 COPY . .
 
