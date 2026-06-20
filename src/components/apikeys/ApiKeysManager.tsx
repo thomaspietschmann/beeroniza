@@ -293,6 +293,7 @@ export function ApiKeysManager({ keys }: { keys: ApiKeyItem[] }) {
               <Form.Label>Name</Form.Label>
               <Form.Control
                 autoFocus
+                required
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. Production server"
