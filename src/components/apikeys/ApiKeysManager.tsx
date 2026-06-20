@@ -273,6 +273,13 @@ export function ApiKeysManager({ keys }: { keys: ApiKeyItem[] }) {
             </Table>
           </div>
         )}
+        {keys.some((k) => statusOf(k) !== "active") && (
+          <div className="px-3 py-2 border-top">
+            <p className="small text-secondary mb-0">
+              Revoked and expired keys are automatically deleted after 30 days.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Create modal */}

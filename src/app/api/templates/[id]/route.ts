@@ -3,9 +3,9 @@ import { prisma } from "@/lib/db";
 import { templateDocSchema } from "@/lib/template/schema";
 import { withUserParams, notFound, badRequest, json } from "@/lib/api-helpers";
 
-export const GET = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
+export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
   const template = await prisma.template.findFirst({
-    where: { id, userId },
+    where: { id },
   });
   if (!template) return notFound();
   return json({ template });
@@ -18,8 +18,8 @@ const updateSchema = z.object({
   data: templateDocSchema.optional(),
 });
 
-export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) => {
-  const existing = await prisma.template.findFirst({ where: { id, userId } });
+export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
+  const existing = await prisma.template.findFirst({ where: { id } });
   if (!existing) return notFound();
 
   const body = await req.json().catch(() => null);
@@ -39,8 +39,8 @@ export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) =>
   return json({ template });
 });
 
-export const DELETE = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const existing = await prisma.template.findFirst({ where: { id, userId } });
+export const DELETE = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
+  const existing = await prisma.template.findFirst({ where: { id } });
   if (!existing) return notFound();
 
   await prisma.template.delete({ where: { id } });

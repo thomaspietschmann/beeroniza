@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { templateDocSchema, placeholdersOf, type PlaceholderDef } from "@/lib/template/schema";
-import { ApiExample } from "@/components/generate/ApiExample";
 import { UsagesList, type UsageListItem } from "@/components/usages/UsagesList";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +12,7 @@ export default async function TemplateUsagesPage({ params }: { params: Promise<{
   const userId = user.id as string;
 
   const template = await prisma.template.findFirst({
-    where: { id, userId },
+    where: { id },
     select: { id: true, name: true, width: true, height: true, data: true },
   });
 
@@ -32,12 +30,6 @@ export default async function TemplateUsagesPage({ params }: { params: Promise<{
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString(),
   }));
-
-  let placeholders: PlaceholderDef[] = [];
-  const parsed = templateDocSchema.safeParse(template.data);
-  if (parsed.success) {
-    placeholders = placeholdersOf(parsed.data);
-  }
 
   return (
     <div>
@@ -59,8 +51,6 @@ export default async function TemplateUsagesPage({ params }: { params: Promise<{
       </div>
 
       <UsagesList templateId={template.id} usages={usageItems} />
-
-      <ApiExample templateId={template.id} placeholders={placeholders} />
     </div>
   );
 }

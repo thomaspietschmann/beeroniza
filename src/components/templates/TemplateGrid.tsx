@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
+import Dropdown from "react-bootstrap/Dropdown";
 import Row from "react-bootstrap/Row";
 import { formatRelativeTime } from "@/components/dashboard/format";
-import { PLATFORM_ORDER } from "@/lib/presets";
+import { PLATFORM_ORDER, SIZE_PRESETS } from "@/lib/presets";
 import { apiMutate } from "@/lib/api-client";
 import { NewTemplateModal } from "./NewTemplateModal";
 import { TemplateThumb } from "./TemplateThumb";
@@ -27,9 +28,8 @@ export interface TemplateListItem {
   createdAt: string;
 }
 
-const INDIVIDUAL = "Individuell";
+const FILTER_OWN = "__own__";
 
-// Logical order for the 8 content variants within a format.
 const VARIANT_ORDER = [
   "Title",
   "Title + 1 avatar",
@@ -44,6 +44,15 @@ const VARIANT_ORDER = [
 function variantRank(name: string): number {
   const i = VARIANT_ORDER.indexOf(name);
   return i === -1 ? VARIANT_ORDER.length : i;
+}
+
+interface FormatGroup {
+  key: string;
+  label: string;
+  width: number;
+  height: number;
+  platforms: string[];
+  items: TemplateListItem[];
 }
 
 function TemplateCard({
@@ -69,61 +78,92 @@ function TemplateCard({
           <div className={styles.name} title={tpl.name}>
             {tpl.name}
           </div>
-          <div className={styles.format}>
-            {tpl.formatLabel || `${tpl.width}×${tpl.height}`}
-          </div>
+          {tpl.formatLabel && (
+            <div className={styles.format}>{tpl.formatLabel}</div>
+          )}
           <div className={styles.meta}>Updated {formatRelativeTime(tpl.updatedAt)}</div>
         </div>
         <div className={styles.actions}>
-          <Button
-            size="sm"
-            variant="primary"
-            className="flex-grow-1"
-            onClick={() => onUse(tpl)}
-          >
+          <Button size="sm" variant="primary" className="flex-grow-1" onClick={() => onUse(tpl)}>
             Use this template
           </Button>
-          <Link href={`/editor/${tpl.id}`} className="btn btn-sm btn-outline-dark">
-            Edit
-          </Link>
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            onClick={() => onApi(tpl)}
-            aria-label={`API example for ${tpl.name}`}
-          >
-            API
-          </Button>
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            onClick={() => onDuplicate(tpl)}
-            aria-label={`Duplicate ${tpl.name}`}
-          >
-            Duplicate
-          </Button>
-          <Button
-            size="sm"
-            variant="outline-danger"
-            onClick={() => onDelete(tpl)}
-            aria-label={`Delete ${tpl.name}`}
-          >
-            Delete
-          </Button>
-        </div>
-        <div className={styles.subActions}>
-          <Link href={`/templates/${tpl.id}`} className="text-decoration-none small">
-            Saved usages →
-          </Link>
+          <Dropdown align="end">
+            <Dropdown.Toggle size="sm" variant="outline-secondary" className="bnz-no-caret" id={`tpl-menu-${tpl.id}`} aria-label="More actions">
+              ···
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item as={Link} href={`/editor/${tpl.id}`}>Edit</Dropdown.Item>
+              <Dropdown.Item as={Link} href={`/templates/${tpl.id}`}>Saved usages</Dropdown.Item>
+              <Dropdown.Item onClick={() => onApi(tpl)}>API example</Dropdown.Item>
+              <Dropdown.Item onClick={() => onDuplicate(tpl)}>Duplicate</Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item className="text-danger" onClick={() => onDelete(tpl)}>Delete</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
       </div>
     </Col>
   );
 }
 
-interface PlatformGroup {
-  platform: string;
+function FormatSection({
+  group,
+  onUse,
+  onDelete,
+  onDuplicate,
+  onApi,
+}: {
+  group: FormatGroup;
+  onUse: (tpl: TemplateListItem) => void;
+  onDelete: (tpl: TemplateListItem) => void;
+  onDuplicate: (tpl: TemplateListItem) => void;
+  onApi: (tpl: TemplateListItem) => void;
+}) {
+  return (
+    <section className={styles.formatSection}>
+      <div className={styles.formatHeader}>
+        <h2 className={styles.formatTitle}>{group.label}</h2>
+        <div className={styles.platformBadges}>
+          {group.platforms.map((p) => (
+            <span key={p} className={styles.platformBadge}>{p}</span>
+          ))}
+        </div>
+      </div>
+      <Row className="g-3">
+        {group.items.map((tpl) => (
+          <TemplateCard key={tpl.id} tpl={tpl} onUse={onUse} onDelete={onDelete} onDuplicate={onDuplicate} onApi={onApi} />
+        ))}
+      </Row>
+    </section>
+  );
+}
+
+function OwnSection({
+  items,
+  onUse,
+  onDelete,
+  onDuplicate,
+  onApi,
+}: {
   items: TemplateListItem[];
+  onUse: (tpl: TemplateListItem) => void;
+  onDelete: (tpl: TemplateListItem) => void;
+  onDuplicate: (tpl: TemplateListItem) => void;
+  onApi: (tpl: TemplateListItem) => void;
+}) {
+  return (
+    <section className={styles.formatSection}>
+      <div className={styles.formatHeader}>
+        <h2 className={styles.formatTitle}>Custom Templates</h2>
+        <span className={styles.ownHint}>Custom size, no standard preset</span>
+      </div>
+      <Row className="g-3">
+        {items.map((tpl) => (
+          <TemplateCard key={tpl.id} tpl={tpl} onUse={onUse} onDelete={onDelete} onDuplicate={onDuplicate} onApi={onApi} />
+        ))}
+      </Row>
+    </section>
+  );
 }
 
 export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
@@ -131,34 +171,87 @@ export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
   const [showNew, setShowNew] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activePlatform, setActivePlatform] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
   const [usingTemplateId, setUsingTemplateId] = useState<string | null>(null);
   const [apiTemplate, setApiTemplate] = useState<TemplateListItem | null>(null);
 
-  // Group templates by platform (null → "Individuell"), in a stable order.
-  const groups = useMemo<PlatformGroup[]>(() => {
-    const byPlatform = new Map<string, TemplateListItem[]>();
+  const { formatGroups, custom } = useMemo(() => {
+    const customTemplates: TemplateListItem[] = [];
+    const byDim = new Map<string, TemplateListItem[]>();
+
     for (const t of templates) {
-      const key = t.platform ?? INDIVIDUAL;
-      const arr = byPlatform.get(key);
+      if (t.platform === null) {
+        customTemplates.push(t);
+        continue;
+      }
+      const key = `${t.width}x${t.height}`;
+      const arr = byDim.get(key);
       if (arr) arr.push(t);
-      else byPlatform.set(key, [t]);
+      else byDim.set(key, [t]);
     }
-    const known = PLATFORM_ORDER as readonly string[];
-    const ordered = [
-      ...known,
-      ...[...byPlatform.keys()].filter((k) => k !== INDIVIDUAL && !known.includes(k)).sort(),
-    ];
-    const result: PlatformGroup[] = ordered
-      .filter((k) => byPlatform.has(k))
-      .map((k) => ({ platform: k, items: byPlatform.get(k)! }));
-    if (byPlatform.has(INDIVIDUAL)) {
-      result.push({ platform: INDIVIDUAL, items: byPlatform.get(INDIVIDUAL)! });
+
+    const groups: FormatGroup[] = [];
+    const seenDims = new Set<string>();
+
+    for (const preset of SIZE_PRESETS) {
+      const key = `${preset.width}x${preset.height}`;
+      if (seenDims.has(key)) continue;
+      seenDims.add(key);
+
+      const all = byDim.get(key) ?? [];
+      if (all.length === 0) continue;
+
+      const platformSet = new Set(all.map((t) => t.platform!));
+      const platforms = (PLATFORM_ORDER as readonly string[]).filter((p) => platformSet.has(p));
+
+      // Sort by platform order first, then variant — ensures canonical platform is
+      // preferred when deduplicating by variant name.
+      const sorted = [...all].sort((a, b) => {
+        const pa = (PLATFORM_ORDER as readonly string[]).indexOf(a.platform ?? "");
+        const pb = (PLATFORM_ORDER as readonly string[]).indexOf(b.platform ?? "");
+        return pa !== pb ? pa - pb : variantRank(a.name) - variantRank(b.name);
+      });
+
+      const seenNames = new Set<string>();
+      const items: TemplateListItem[] = [];
+      for (const t of sorted) {
+        if (!seenNames.has(t.name)) {
+          seenNames.add(t.name);
+          items.push(t);
+        }
+      }
+      items.sort((a, b) => variantRank(a.name) - variantRank(b.name));
+
+      groups.push({ key, label: preset.label, width: preset.width, height: preset.height, platforms, items });
     }
-    return result;
+
+    // Templates with platform set but dimensions not in SIZE_PRESETS (unusual, but possible).
+    for (const [key, all] of byDim.entries()) {
+      if (seenDims.has(key)) continue;
+      const [w, h] = key.split("x").map(Number);
+      const platformSet = new Set(all.map((t) => t.platform!));
+      const platforms = [...platformSet].sort();
+      groups.push({
+        key,
+        label: `${w}×${h}`,
+        width: w,
+        height: h,
+        platforms,
+        items: [...all].sort((a, b) => variantRank(a.name) - variantRank(b.name)),
+      });
+    }
+
+    return { formatGroups: groups, custom: customTemplates };
   }, [templates]);
 
-  const visibleGroups = activePlatform === "all" ? groups : groups.filter((g) => g.platform === activePlatform);
+  const visibleFormatGroups =
+    activeFilter === "all"
+      ? formatGroups
+      : activeFilter === FILTER_OWN
+        ? []
+        : formatGroups.filter((g) => g.key === activeFilter);
+
+  const showCustomSection = activeFilter === "all" || activeFilter === FILTER_OWN;
 
   async function handleDuplicate(tpl: TemplateListItem) {
     setError(null);
@@ -172,7 +265,7 @@ export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
 
   async function handleDelete(tpl: TemplateListItem) {
     if (deletingId) return;
-    const ok = window.confirm(`Delete “${tpl.name}”? This cannot be undone.`);
+    const ok = window.confirm(`Delete "${tpl.name}"? This cannot be undone.`);
     if (!ok) return;
     setError(null);
     setDeletingId(tpl.id);
@@ -186,21 +279,28 @@ export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
     }
   }
 
+  const handlers = {
+    onUse: (tpl: TemplateListItem) => setUsingTemplateId(tpl.id),
+    onDelete: handleDelete,
+    onDuplicate: handleDuplicate,
+    onApi: (tpl: TemplateListItem) => setApiTemplate(tpl),
+  };
+
   return (
     <div>
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
         <div>
           <h1 className="h3 mb-1">Templates</h1>
-          <p className="text-secondary mb-0">Organised by platform — pick a format or create your own.</p>
+          <p className="text-secondary mb-0">
+            Filter by format — duplicate sizes are merged, compatible platforms shown inline.
+          </p>
         </div>
         <Button variant="primary" onClick={() => setShowNew(true)}>
           New template
         </Button>
       </div>
 
-      {error && (
-        <Alert variant="danger">{error}</Alert>
-      )}
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {templates.length === 0 ? (
         <div className="bnz-card text-center py-5 px-3">
@@ -212,39 +312,45 @@ export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
         </div>
       ) : (
         <>
-          {/* Platform filter */}
-          <div className={styles.filters} role="group" aria-label="Filter by platform">
+          <div className={styles.filters} role="group" aria-label="Filter by format">
             <button
               type="button"
-              className={`${styles.chip}${activePlatform === "all" ? ` ${styles.chipActive}` : ""}`}
-              onClick={() => setActivePlatform("all")}
+              className={`${styles.chip}${activeFilter === "all" ? ` ${styles.chipActive}` : ""}`}
+              onClick={() => setActiveFilter("all")}
             >
               All
               <span className={styles.chipCount}>{templates.length}</span>
             </button>
-            {groups.map((g) => (
+            {formatGroups.map((g) => (
               <button
-                key={g.platform}
+                key={g.key}
                 type="button"
-                className={`${styles.chip}${activePlatform === g.platform ? ` ${styles.chipActive}` : ""}`}
-                onClick={() => setActivePlatform(g.platform)}
+                className={`${styles.chip}${activeFilter === g.key ? ` ${styles.chipActive}` : ""}`}
+                onClick={() => setActiveFilter(g.key)}
               >
-                {g.platform}
+                {g.label}
                 <span className={styles.chipCount}>{g.items.length}</span>
               </button>
             ))}
+            {custom.length > 0 && (
+              <button
+                type="button"
+                className={`${styles.chip}${activeFilter === FILTER_OWN ? ` ${styles.chipActive}` : ""}`}
+                onClick={() => setActiveFilter(FILTER_OWN)}
+              >
+                Custom
+                <span className={styles.chipCount}>{custom.length}</span>
+              </button>
+            )}
           </div>
 
-          {visibleGroups.map((g) => (
-            <PlatformSection
-              key={g.platform}
-              group={g}
-              onUse={(tpl) => setUsingTemplateId(tpl.id)}
-              onDelete={handleDelete}
-              onDuplicate={handleDuplicate}
-              onApi={(tpl) => setApiTemplate(tpl)}
-            />
+          {visibleFormatGroups.map((g) => (
+            <FormatSection key={g.key} group={g} {...handlers} />
           ))}
+
+          {showCustomSection && custom.length > 0 && (
+            <OwnSection items={custom} {...handlers} />
+          )}
         </>
       )}
 
@@ -261,62 +367,5 @@ export function TemplateGrid({ templates }: { templates: TemplateListItem[] }) {
         onHide={() => setApiTemplate(null)}
       />
     </div>
-  );
-}
-
-function PlatformSection({
-  group,
-  onUse,
-  onDelete,
-  onDuplicate,
-  onApi,
-}: {
-  group: PlatformGroup;
-  onUse: (tpl: TemplateListItem) => void;
-  onDelete: (tpl: TemplateListItem) => void;
-  onDuplicate: (tpl: TemplateListItem) => void;
-  onApi: (tpl: TemplateListItem) => void;
-}) {
-  // Within a platform, group by format label; "Individuell" stays flat.
-  const formats = useMemo(() => {
-    if (group.platform === INDIVIDUAL) {
-      return [{ label: null as string | null, items: [...group.items] }];
-    }
-    const byFormat = new Map<string, TemplateListItem[]>();
-    for (const t of group.items) {
-      const key = t.formatLabel ?? "Other";
-      const arr = byFormat.get(key);
-      if (arr) arr.push(t);
-      else byFormat.set(key, [t]);
-    }
-    return [...byFormat.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, items]) => ({
-        label,
-        items: items.sort((x, y) => variantRank(x.name) - variantRank(y.name)),
-      }));
-  }, [group]);
-
-  return (
-    <section className={styles.platformSection}>
-      <h2 className={styles.platformTitle}>{group.platform}</h2>
-      {formats.map((f) => (
-        <div key={f.label ?? "__flat__"} className={styles.formatBlock}>
-          {f.label && <h3 className={styles.formatTitle}>{f.label}</h3>}
-          <Row className="g-3">
-            {f.items.map((tpl) => (
-              <TemplateCard
-                key={tpl.id}
-                tpl={tpl}
-                onUse={onUse}
-                onDelete={onDelete}
-                onDuplicate={onDuplicate}
-                onApi={onApi}
-              />
-            ))}
-          </Row>
-        </div>
-      ))}
-    </section>
   );
 }

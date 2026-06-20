@@ -3,9 +3,9 @@ import { prisma } from "@/lib/db";
 import { emptyTemplateDoc } from "@/lib/templates";
 import { withUser, badRequest, json } from "@/lib/api-helpers";
 
-export const GET = withUser(async (_req, userId) => {
+export const GET = withUser(async (_req, _userId) => {
   const templates = await prisma.template.findMany({
-    where: { userId },
+    where: {},
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,

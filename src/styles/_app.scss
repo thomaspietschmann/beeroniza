@@ -1,6 +1,11 @@
 // App chrome: navbar, auth screens, landing, cards. Editor-specific styles
 // live in _editor.scss.
 
+u:root {
+  // logo height (36px) + top + bottom navbar padding
+  --bnz-navbar-h: calc(36px + #{$navbar-padding-y * 2});
+}
+
 body {
   min-height: 100vh;
 }
@@ -144,6 +149,87 @@ body {
 code,
 .bnz-mono {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+// Dropdown toggles that should not render Bootstrap's caret chevron
+.bnz-no-caret {
+  &::after,
+  &::before {
+    display: none !important;
+  }
+}
+
+// Language-switchable API snippet (tabs + optional image-mode toggle)
+.bnz-snippet {
+  .bnz-snippet-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .bnz-snippet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .bnz-snippet-tab,
+  .bnz-snippet-mode {
+    border: 1px solid $card-border-color;
+    background: #fff;
+    color: rgba(22, 20, 39, 0.7);
+    border-radius: $border-radius;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+
+    &:hover {
+      border-color: $bnz-ink;
+      color: $bnz-ink;
+    }
+
+    &.active {
+      background: $bnz-ink;
+      border-color: $bnz-ink;
+      color: #fff;
+    }
+  }
+
+  .bnz-snippet-copy {
+    border: 1px solid $card-border-color;
+    background: #fff;
+    color: rgba(22, 20, 39, 0.7);
+    border-radius: $border-radius;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      border-color: $bnz-ink;
+      color: $bnz-ink;
+    }
+  }
+
+  .bnz-snippet-modes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+
+    .bnz-snippet-modes-label {
+      font-size: 0.8rem;
+      color: rgba(22, 20, 39, 0.6);
+      margin-right: 0.15rem;
+    }
+  }
 }
 
 // Copyable code block (API examples)

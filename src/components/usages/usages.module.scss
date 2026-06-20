@@ -48,7 +48,7 @@
 
 .previewWrap {
   position: sticky;
-  top: 1rem;
+  top: calc(var(--bnz-navbar-h) + 1rem);
 }
 
 .previewFrame {

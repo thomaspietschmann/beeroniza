@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 // pg-boss runs the job queue inside the SAME PostgreSQL database (its own
 // schema), so no Redis or extra broker is needed.
 export const RENDER_QUEUE = "render-image";
+export const CLEANUP_API_KEYS_QUEUE = "cleanup-api-keys";
 
 export interface RenderJobData {
   generationId: string;
@@ -23,6 +24,13 @@ export async function getBoss(): Promise<PgBoss> {
     })();
   }
   return bossPromise;
+}
+
+// Registers (or updates) the daily cron schedule that purges stale API keys.
+// Safe to call multiple times; pg-boss deduplicates by name.
+export async function scheduleApiKeyCleanup(): Promise<void> {
+  const boss = await getBoss();
+  await boss.schedule(CLEANUP_API_KEYS_QUEUE, "0 3 * * *", {});
 }
 
 export async function enqueueRender(

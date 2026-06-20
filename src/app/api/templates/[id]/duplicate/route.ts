@@ -3,7 +3,7 @@ import { withUserParams, notFound, json } from "@/lib/api-helpers";
 
 // Duplicate a template into a new, independent copy owned by the same user.
 export const POST = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const src = await prisma.template.findFirst({ where: { id, userId } });
+  const src = await prisma.template.findFirst({ where: { id } });
   if (!src) return notFound();
 
   const copy = await prisma.template.create({

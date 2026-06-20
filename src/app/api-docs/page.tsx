@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { ApiSnippet } from "@/components/generate/ApiSnippet";
 
 export const metadata = {
   title: "API Reference — Beeroniza",
 };
+
+const DOCS_ORIGIN = "https://your-instance";
 
 export default function ApiDocsPage() {
   return (
@@ -78,10 +81,9 @@ export default function ApiDocsPage() {
           Lists all templates available to this API key, including each
           template&apos;s placeholders so you know what you can fill in.
         </p>
-        <pre className="bnz-code-block mb-3">
-          <code>{`curl -H "Authorization: Bearer $BNZ_KEY" \\
-  https://your-instance/api/v1/templates`}</code>
-        </pre>
+        <div className="mb-3">
+          <ApiSnippet spec={{ kind: "get", url: `${DOCS_ORIGIN}/api/v1/templates` }} />
+        </div>
         <p className="small text-muted mb-2">Example response:</p>
         <pre className="bnz-code-block mb-0">
           <code>{`{
@@ -153,22 +155,27 @@ export default function ApiDocsPage() {
             </tr>
           </tbody>
         </table>
-        <pre className="bnz-code-block mb-3">
-          <code>{`curl -X POST https://your-instance/api/v1/images \\
-  -H "Authorization: Bearer $BNZ_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "template_id": "ckxyz123",
-    "modifications": [
-      { "name": "title", "text": "Hello from an AI agent" },
-      { "name": "author_name", "text": "Ada Lovelace" },
-      { "name": "avatar", "image_url": "https://example.com/ada.png" },
-      { "name": "background", "color": "#0b0b1a" }
-    ],
-    "format": "png",
-    "webhook_url": "https://my.app/hooks/beeroniza"
-  }'`}</code>
-        </pre>
+        <div className="mb-3">
+          <ApiSnippet
+            spec={{
+              kind: "createImage",
+              origin: DOCS_ORIGIN,
+              templateId: "ckxyz123",
+              format: "png",
+              mods: [
+                { name: "title", type: "text", value: "Hello from an AI agent" },
+                { name: "author_name", type: "text", value: "Ada Lovelace" },
+                { name: "avatar", type: "image", value: "https://example.com/ada.png" },
+                { name: "background", type: "color", value: "#0b0b1a" },
+              ],
+            }}
+          />
+          <p className="small text-muted mt-2 mb-0">
+            Switch <strong>Image input</strong> to compare passing a public{" "}
+            <code>image_url</code> against sending image bytes inline as a base64{" "}
+            <code>data:</code> URL.
+          </p>
+        </div>
         <p className="small text-muted mb-2">Response <code>202</code>:</p>
         <pre className="bnz-code-block mb-0">
           <code>{`{
@@ -194,10 +201,9 @@ export default function ApiDocsPage() {
           <code>&quot;completed&quot;</code>, <code>image_url</code> is set to
           the rendered image URL.
         </p>
-        <pre className="bnz-code-block mb-3">
-          <code>{`curl -H "Authorization: Bearer $BNZ_KEY" \\
-  https://your-instance/api/v1/images/gen_abc`}</code>
-        </pre>
+        <div className="mb-3">
+          <ApiSnippet spec={{ kind: "get", url: `${DOCS_ORIGIN}/api/v1/images/gen_abc` }} />
+        </div>
         <p className="small text-muted mb-2">Example response (completed):</p>
         <pre className="bnz-code-block mb-0">
           <code>{`{
