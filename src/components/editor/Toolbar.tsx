@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FabricEditor } from "./useFabricEditor";
 
 async function uploadFile(file: File): Promise<string> {
@@ -59,28 +59,34 @@ export function Toolbar({ editor }: { editor: FabricEditor }) {
       />
       <span className="bnz-toolbar-sep" aria-hidden />
       <ToolButton label="Text" onClick={editor.addText} icon="T" />
-      <ToolButton label="Rect" onClick={editor.addRect} icon="▭" />
-      <ToolButton label="Rounded" onClick={editor.addRoundedRect} icon="▢" />
-      <ToolButton label="Circle" onClick={editor.addCircle} icon="●" />
-      <ToolButton label="Triangle" onClick={editor.addTriangle} icon="▲" />
-      <ToolButton label="Polygon" onClick={editor.addPolygon} icon="⬡" />
-      <ToolButton label="Star" onClick={editor.addStar} icon="★" />
-      <ToolButton label="Line" onClick={editor.addLine} icon="―" />
       <ToolButton
         label={busy === "image" ? "Uploading…" : "Image"}
         onClick={() => imageInputRef.current?.click()}
         icon="🖼"
         disabled={busy !== null}
       />
+      <ToolMenu label="Shapes" icon="▭">
+        <MenuItem label="Rectangle" icon="▭" onClick={editor.addRect} />
+        <MenuItem label="Rounded rectangle" icon="▢" onClick={editor.addRoundedRect} />
+        <MenuItem label="Circle" icon="●" onClick={editor.addCircle} />
+        <MenuItem label="Triangle" icon="▲" onClick={editor.addTriangle} />
+        <MenuItem label="Polygon" icon="⬡" onClick={editor.addPolygon} />
+        <MenuItem label="Star" icon="★" onClick={editor.addStar} />
+        <MenuItem label="Line" icon="―" onClick={editor.addLine} />
+      </ToolMenu>
       <span className="bnz-toolbar-sep" aria-hidden />
-      <ToolButton label="Align left" onClick={() => editor.alignObjects("left")} icon="⇤" />
-      <ToolButton label="Align center" onClick={() => editor.alignObjects("centerH")} icon="↔" />
-      <ToolButton label="Align right" onClick={() => editor.alignObjects("right")} icon="⇥" />
-      <ToolButton label="Align top" onClick={() => editor.alignObjects("top")} icon="⤒" />
-      <ToolButton label="Align middle" onClick={() => editor.alignObjects("middle")} icon="↕" />
-      <ToolButton label="Align bottom" onClick={() => editor.alignObjects("bottom")} icon="⤓" />
-      <ToolButton label="Distribute H" onClick={() => editor.distributeObjects("h")} icon="⇿" />
-      <ToolButton label="Distribute V" onClick={() => editor.distributeObjects("v")} icon="⇳" />
+      <ToolMenu label="Arrange" icon="↔">
+        <MenuItem label="Align left" icon="⇤" onClick={() => editor.alignObjects("left")} />
+        <MenuItem label="Align center" icon="↔" onClick={() => editor.alignObjects("centerH")} />
+        <MenuItem label="Align right" icon="⇥" onClick={() => editor.alignObjects("right")} />
+        <span className="bnz-menu-sep" role="separator" />
+        <MenuItem label="Align top" icon="⤒" onClick={() => editor.alignObjects("top")} />
+        <MenuItem label="Align middle" icon="↕" onClick={() => editor.alignObjects("middle")} />
+        <MenuItem label="Align bottom" icon="⤓" onClick={() => editor.alignObjects("bottom")} />
+        <span className="bnz-menu-sep" role="separator" />
+        <MenuItem label="Distribute horizontally" icon="⇿" onClick={() => editor.distributeObjects("h")} />
+        <MenuItem label="Distribute vertically" icon="⇳" onClick={() => editor.distributeObjects("v")} />
+      </ToolMenu>
       <span className="bnz-toolbar-sep" aria-hidden />
       <ToolButton
         label={busy === "bg" ? "Uploading…" : "Background"}
@@ -129,6 +135,107 @@ function ToolButton({
         {icon}
       </span>
       <span className="bnz-tool-label">{label}</span>
+    </button>
+  );
+}
+
+function ToolMenu({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  function place() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, left: r.left });
+  }
+
+  function toggle() {
+    setOpen((v) => {
+      if (!v) place();
+      return !v;
+    });
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocPointer(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    function onReflow() {
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocPointer);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onReflow);
+    window.addEventListener("scroll", onReflow, true);
+    return () => {
+      document.removeEventListener("mousedown", onDocPointer);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onReflow);
+      window.removeEventListener("scroll", onReflow, true);
+    };
+  }, [open]);
+
+  return (
+    <div className="bnz-tool-menu" ref={ref}>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`bnz-tool${open ? " is-open" : ""}`}
+        onClick={toggle}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className="bnz-tool-icon" aria-hidden>
+          {icon}
+        </span>
+        <span className="bnz-tool-label">{label}</span>
+        <span className="bnz-tool-caret" aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          className="bnz-menu"
+          role="menu"
+          style={{ top: pos.top, left: pos.left }}
+          onClick={() => setOpen(false)}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({
+  label,
+  icon,
+  onClick,
+}: {
+  label: string;
+  icon: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className="bnz-menu-item" role="menuitem" onClick={onClick}>
+      <span className="bnz-menu-item-icon" aria-hidden>
+        {icon}
+      </span>
+      <span className="bnz-menu-item-label">{label}</span>
     </button>
   );
 }
