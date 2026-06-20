@@ -51,6 +51,7 @@ The repository ships with a ready-to-use set of demo images in the `demo-assets/
 | `set-c-galactic-crew` | Space-faring cosmic heroes |
 | `set-d-desert-frontier` | Desert-frontier adventurers |
 | `set-e-brew-order` | Mystical alchemist brew-masters |
+| `set-f-shiva-friends` | Cosmic deity warriors — anthropomorphic dog characters |
 
 **How to use them:** After starting a fresh instance, go to the media library and upload the images from any of the folders. You'll then have real content to build and test templates with right away — no need to hunt for placeholder images first.
 
