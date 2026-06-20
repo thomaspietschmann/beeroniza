@@ -33,5 +33,7 @@ export const POST = withApiKey(async (req, user) => {
 
   // createGeneration returns the freshly-created row, which already has every
   // field serializeGeneration reads — no second query needed.
-  return json(serializeGeneration(generation, env.appUrl), 202);
+  const res = json(serializeGeneration(generation, env.appUrl), 202);
+  res.headers.set("Location", `${env.appUrl}/api/v1/images/${generation.id}`);
+  return res;
 });

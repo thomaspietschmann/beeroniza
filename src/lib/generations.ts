@@ -14,7 +14,7 @@ export async function createGeneration(opts: {
   usageId?: string | null;
 }) {
   const template = await prisma.template.findFirst({
-    where: { id: opts.templateId, userId: opts.userId },
+    where: { id: opts.templateId },
   });
   if (!template) return null;
 
