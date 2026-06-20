@@ -214,7 +214,7 @@ function ShapeProps({ editor, obj }: { editor: FabricEditor; obj: EditorObject }
   const s = obj as fabric.FabricObject;
   // When a shape is a dynamic image, its fill is replaced at render time, so the
   // editor colour picker is irrelevant — hide it to avoid confusion.
-  const isDynamicImage = obj.bnzPlaceholder?.type === "image";
+  const isDynamicImage = obj.bnzPlaceholder?.kind === "image";
 
   return (
     <div className="bnz-props-group">
@@ -315,7 +315,7 @@ function ImageFitControl({ editor, obj }: { editor: FabricEditor; obj: EditorObj
   const fit: ImageFit = obj.bnzImageFit ?? "cover";
   const align: ImageAlign = obj.bnzImageAlign ?? "center";
 
-  const fillsWithImage = isImage(obj) || obj.bnzPlaceholder?.type === "image";
+  const fillsWithImage = isImage(obj) || obj.bnzPlaceholder?.kind === "image";
   if (!fillsWithImage) return null;
 
   return (
@@ -435,7 +435,7 @@ function DynamicControl({ editor, obj }: { editor: FabricEditor; obj: EditorObje
   const existing = obj.bnzPlaceholder;
   const isDynamic = Boolean(existing);
   const typeOptions = typeOptionsFor(kind);
-  const type = existing?.type ?? defaultTypeFor(kind);
+  const type = existing?.kind ?? defaultTypeFor(kind);
 
   const [key, setKey] = useState(obj.bnzName ?? "");
   const [label, setLabel] = useState(existing?.label ?? "");

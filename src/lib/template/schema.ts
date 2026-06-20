@@ -99,7 +99,7 @@ function placeholdersFromFabric(doc: TemplateDoc): PlaceholderDef[] {
   for (const raw of objects) {
     const o = raw as {
       bnzName?: unknown;
-      bnzPlaceholder?: { type?: unknown; label?: unknown };
+      bnzPlaceholder?: { kind?: unknown; label?: unknown };
       text?: unknown;
       fill?: unknown;
     };
@@ -107,17 +107,18 @@ function placeholdersFromFabric(doc: TemplateDoc): PlaceholderDef[] {
     const name = typeof o?.bnzName === "string" ? o.bnzName : undefined;
     if (!ph || !name || seen.has(name)) continue;
 
-    const type = placeholderTypeSchema.safeParse(ph.type);
-    if (!type.success) continue;
+    const parsed = placeholderTypeSchema.safeParse(ph.kind);
+    if (!parsed.success) continue;
+    const type = parsed.data;
 
-    const def: PlaceholderDef = { key: name, type: type.data };
+    const def: PlaceholderDef = { key: name, type };
     if (typeof ph.label === "string") def.label = ph.label;
     // A text layer's current text doubles as its default fill value.
-    if (type.data === "text" && typeof o.text === "string" && o.text) {
+    if (type === "text" && typeof o.text === "string" && o.text) {
       def.defaultValue = o.text;
     }
     // A color layer's fill color is its template default.
-    if (type.data === "color" && typeof o.fill === "string" && o.fill) {
+    if (type === "color" && typeof o.fill === "string" && o.fill) {
       def.defaultValue = o.fill;
     }
     seen.add(name);

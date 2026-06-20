@@ -4,11 +4,11 @@
 // preview and the generated image.
 
 import * as fabric from "fabric";
-import type { Modification, TemplateDoc, ClipShape } from "./schema";
+import type { Modification, TemplateDoc, ClipShape, PlaceholderType } from "./schema";
 
 // Custom Fabric object properties we persist in the template JSON.
 //   bnzName        – stable key (the API/form field name)
-//   bnzPlaceholder – { type: "text"|"image"|"color", label? } marks it fillable
+//   bnzPlaceholder – { kind: "text"|"image"|"color", label? } marks it fillable
 //   bnzClip        – crop shape for image layers
 //   bnzFit         – text overflow strategy when filled: "shrink" | "truncate" | "wrap"
 //   bnzMaxHeight   – max height (px) a fillable text box may occupy before fit kicks in
@@ -32,7 +32,7 @@ export type ImageAlign = "left" | "center" | "right";
 
 type AnyObject = fabric.FabricObject & {
   bnzName?: string;
-  bnzPlaceholder?: { type: "text" | "image" | "color"; label?: string };
+  bnzPlaceholder?: { kind: PlaceholderType; label?: string };
   bnzClip?: ClipShape;
   bnzFit?: TextFit;
   bnzMaxHeight?: number;

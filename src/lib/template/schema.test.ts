@@ -43,8 +43,8 @@ describe("templateDocSchema + placeholdersOf", () => {
       fabric: {
         objects: [
           { type: "Rect", bnzName: "bar" }, // static, no placeholder → ignored
-          { type: "Textbox", bnzName: "title", text: "Hi", bnzPlaceholder: { type: "text", label: "Title" } },
-          { type: "Image", bnzName: "logo", bnzPlaceholder: { type: "image", label: "Logo" } },
+          { type: "Textbox", bnzName: "title", text: "Hi", bnzPlaceholder: { kind: "text", label: "Title" } },
+          { type: "Image", bnzName: "logo", bnzPlaceholder: { kind: "image", label: "Logo" } },
         ],
       },
       placeholders: [],

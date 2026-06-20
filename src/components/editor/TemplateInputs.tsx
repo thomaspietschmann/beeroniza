@@ -29,7 +29,7 @@ export function TemplateInputs({ editor }: { editor: FabricEditor }) {
             const ph = f.bnzPlaceholder!;
             return (
               <li key={f.bnzName} className="bnz-input-row" onClick={() => editor.selectObject(f)}>
-                <span className={`bnz-type-badge bnz-type-${ph.type}`}>{ph.type}</span>
+                <span className={`bnz-type-badge bnz-type-${ph.kind}`}>{ph.kind}</span>
                 <code className="bnz-input-key">{f.bnzName}</code>
                 {ph.label && <span className="bnz-input-label">{ph.label}</span>}
               </li>

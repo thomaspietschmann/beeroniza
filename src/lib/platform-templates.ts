@@ -95,7 +95,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
     scaleY: 1,
     bnzName: "background",
     bnzKeepDefault: true,
-    bnzPlaceholder: { type: "image", label: "Background image" },
+    bnzPlaceholder: { kind: "image", label: "Background image" },
   });
 
   // 2) Title (always present; large, centered).
@@ -116,7 +116,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
     bnzName: "title",
     bnzFit: "shrink",
     bnzMaxHeight: titleMaxH,
-    bnzPlaceholder: { type: "text", label: "Title" },
+    bnzPlaceholder: { kind: "text", label: "Title" },
   });
 
   // 3) Subtitle (optional variants).
@@ -137,7 +137,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
       bnzName: "subtitle",
       bnzFit: "shrink",
       bnzMaxHeight: Math.round(subSize * 2.6),
-      bnzPlaceholder: { type: "text", label: "Subtitle" },
+      bnzPlaceholder: { kind: "text", label: "Subtitle" },
     });
   }
 
@@ -154,7 +154,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
       fill: PEACH,
       bnzName: "bar_color",
       bnzKeepDefault: true, // keeps the peach default if no color is supplied
-      bnzPlaceholder: { type: "color", label: "Bar color" },
+      bnzPlaceholder: { kind: "color", label: "Bar color" },
     });
 
     const slots = 3;
@@ -180,7 +180,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
         clipPath: { type: "Circle", radius: 120, originX: "center", originY: "center" },
         bnzName: `author${n}_avatar`,
         bnzClip: "circle",
-        bnzPlaceholder: { type: "image", label: `Author ${n} avatar` },
+        bnzPlaceholder: { kind: "image", label: `Author ${n} avatar` },
       });
       objects.push({
         type: "Textbox",
@@ -198,7 +198,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
         bnzName: `author${n}_name`,
         bnzFit: "shrink",
         bnzMaxHeight: Math.round(nameSize * 2.4),
-        bnzPlaceholder: { type: "text", label: `Author ${n} name` },
+        bnzPlaceholder: { kind: "text", label: `Author ${n} name` },
       });
     }
   }
@@ -219,7 +219,7 @@ export function buildPlatformDoc(w: number, h: number, v: PlatformVariant) {
     bnzName: "logo",
     bnzImageFit: "contain",
     bnzImageAlign: "right",
-    bnzPlaceholder: { type: "image", label: "Logo (transparent PNG)" },
+    bnzPlaceholder: { kind: "image", label: "Logo (transparent PNG)" },
   });
 
   return {

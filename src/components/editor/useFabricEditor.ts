@@ -284,8 +284,8 @@ export function useFabricEditor(doc: TemplateDoc | null): FabricEditor {
       for (const o of canvas.getObjects() as EditorObject[]) {
         if (o.visible === false) continue;
         const ph = o.bnzPlaceholder;
-        const isImgPh = ph?.type === "image";
-        const isTextPh = ph?.type === "text";
+        const isImgPh = ph?.kind === "image";
+        const isTextPh = ph?.kind === "text";
         if (!isImgPh && !isTextPh) continue;
         const color = isImgPh ? IMG_COLOR : TXT_COLOR;
         const b = o.getBoundingRect();
@@ -832,7 +832,7 @@ export function useFabricEditor(doc: TemplateDoc | null): FabricEditor {
       const obj = canvas?.getActiveObject() as EditorObject | undefined;
       if (!canvas || !obj) return;
       obj.bnzName = key;
-      obj.bnzPlaceholder = { type, ...(label ? { label } : {}) };
+      obj.bnzPlaceholder = { kind: type, ...(label ? { label } : {}) };
       // For fillable text, default to shrink-to-fit within the box the designer
       // drew, so over-long API values don't blow out the layout.
       if (type === "text" && isText(obj)) {
@@ -923,7 +923,7 @@ export function useFabricEditor(doc: TemplateDoc | null): FabricEditor {
         seen.add(o.bnzName);
         placeholders.push({
           key: o.bnzName,
-          type: o.bnzPlaceholder.type,
+          type: o.bnzPlaceholder.kind,
           ...(o.bnzPlaceholder.label ? { label: o.bnzPlaceholder.label } : {}),
         });
       }

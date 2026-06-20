@@ -4,8 +4,11 @@ import type { ClipShape, PlaceholderType } from "@/lib/template/schema";
 // The custom per-object metadata we attach to Fabric objects. These are
 // declared in BNZ_PROPS (see fabric-render.ts) and round-trip through
 // canvas.toJSON(BNZ_PROPS).
+// `kind` (not `type`) is deliberate: Fabric's loadFromJSON enlivens any nested
+// property whose `type` matches a registered class, so a discriminator named
+// `type:"image"` would be revived into a Fabric Image and corrupt the template.
 export interface BnzPlaceholder {
-  type: PlaceholderType;
+  kind: PlaceholderType;
   label?: string;
 }
 

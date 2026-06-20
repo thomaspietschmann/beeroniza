@@ -45,8 +45,8 @@ export function LayerPanel({ editor }: { editor: FabricEditor }) {
                   </span>
                   <span className="bnz-layer-name">{displayName(obj)}</span>
                   {ph ? (
-                    <span className={`bnz-badge bnz-badge-sm bnz-type-${ph.type}`}>
-                      {ph.type}
+                    <span className={`bnz-badge bnz-badge-sm bnz-type-${ph.kind}`}>
+                      {ph.kind}
                     </span>
                   ) : (
                     <span className="bnz-badge bnz-badge-sm bnz-badge-static">
