@@ -377,6 +377,10 @@ function Topbar({
   return (
     <header className="bnz-topbar">
       <div className="bnz-topbar-left">
+        <a href="/dashboard" className="bnz-topbar-logo" title="Dashboard" aria-label="Beeroniza — go to dashboard">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/bee/beeroniza-bee-mark.png" alt="" width={24} height={24} />
+        </a>
         <button
           type="button"
           className="bnz-back"

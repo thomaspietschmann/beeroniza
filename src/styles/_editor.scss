@@ -58,6 +58,17 @@
   min-width: 0;
 }
 
+.bnz-topbar-logo {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  flex-shrink: 0;
+  padding-right: 0.25rem;
+  border-right: 1px solid var(--editor-border);
+
+  &:hover { opacity: 1; }
+}
+
 .bnz-back {
   appearance: none;
   background: none;

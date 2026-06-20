@@ -75,7 +75,9 @@ body {
   padding: 2.25rem;
 
   .auth-brand {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.03em;
@@ -86,33 +88,307 @@ body {
 }
 
 // ── Landing ──────────────────────────────────────────────────────────────
-.landing {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 1.5rem;
+
+.bnz-landing {
+  background: $bnz-surface;
 }
-.landing-nav {
+
+// Shared inner container
+.bl-container {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding-inline: 4rem;
+
+  @media (max-width: 768px) { padding-inline: 1.5rem; }
+}
+
+// ── Nav ──────────────────────────────────────────────────────────────────
+
+.bl-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba($bnz-ink, 0.95);
+  backdrop-filter: saturate(1.3) blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-block: 1rem 4rem;
-}
-.landing-hero {
-  text-align: center;
-  padding: 2rem 0 4rem;
-  max-width: 46rem;
-  margin: 0 auto;
-}
-.landing-features {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  padding: 1rem 4rem;
 
-  .feature {
-    background: #fff;
-    border: 1px solid $card-border-color;
-    border-radius: $border-radius-lg;
-    padding: 1.5rem;
+  @media (max-width: 768px) { padding: 1rem 1.5rem; }
+}
+
+.bl-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+
+.bl-wordmark {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.bl-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bl-btn-ghost {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: $border-radius-sm;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &.bl-btn-ghost--lg {
+    font-size: 1rem;
+    padding: 0.55rem 1.25rem;
+  }
+}
+
+// ── Hero ─────────────────────────────────────────────────────────────────
+
+.bl-hero {
+  background: $bnz-ink;
+  padding-block: 1.75rem 2.5rem;
+}
+
+.bl-hero-inner {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding-inline: 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    padding-inline: 1.5rem;
+    gap: 3.5rem;
+  }
+}
+
+.bl-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $bnz-amber;
+  margin-bottom: 1.25rem;
+}
+
+// Amber on the payoff word — second amber touch in the hero before the CTA strip
+.bl-headline {
+  font-family: "Oswald", $font-family-sans-serif;
+  font-weight: 700;
+  font-size: clamp(3.5rem, 6vw, 6rem);
+  line-height: 0.93;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 1.75rem;
+
+  .bl-headline-amber { color: $bnz-amber; }
+}
+
+.bl-sub {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.58);
+  margin-bottom: 2.5rem;
+  max-width: 38rem;
+}
+
+.bl-ctas {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+// ── Mock OG card ─────────────────────────────────────────────────────────
+
+.bl-hero-visual {
+  @media (max-width: 900px) { display: none; }
+}
+
+.bl-hero-img {
+  width: 100%;
+  max-width: 540px;
+  height: auto;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 0 0 1px rgba($bnz-indigo, 0.18),
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+  display: block;
+}
+
+// ── Features ─────────────────────────────────────────────────────────────
+
+.bl-features {
+  padding-block: 5rem;
+  background: $bnz-surface;
+}
+
+.bl-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5rem;
+}
+
+.bl-feature {
+  background: #fff;
+  border: 1px solid rgba($bnz-ink, 0.07);
+  border-radius: $border-radius-lg;
+  padding: 2rem;
+}
+
+.bl-feat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: $border-radius;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+
+  &.bl-feat-icon--indigo { background: rgba($bnz-indigo, 0.12); color: $bnz-indigo; }
+  &.bl-feat-icon--amber  { background: rgba($bnz-amber, 0.2);   color: darken($bnz-amber, 30%); }
+  &.bl-feat-icon--dark   { background: rgba($bnz-ink, 0.07);    color: $bnz-ink; }
+}
+
+.bl-feat-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $bnz-ink;
+  margin-bottom: 0.6rem;
+}
+
+.bl-feat-desc {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba($bnz-ink, 0.68);
+  margin: 0;
+}
+
+// ── How it works ─────────────────────────────────────────────────────────
+
+.bl-how {
+  padding-block: 5rem;
+  background: #fff;
+}
+
+// Title-case, NOT uppercase — Oswald uppercase reserved for hero only
+.bl-section-title {
+  font-family: "Oswald", $font-family-sans-serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: $bnz-ink;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.bl-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+
+  @media (max-width: 700px) {
+    flex-direction: column;
+
+    .bl-step-arrow { display: none; }
+  }
+}
+
+.bl-step {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.bl-step-n {
+  font-family: "Oswald", $font-family-sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: $bnz-indigo;
+  line-height: 1;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+.bl-step-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: $bnz-ink;
+  margin-bottom: 0.35rem;
+}
+
+.bl-step-desc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba($bnz-ink, 0.68);
+}
+
+.bl-step-arrow {
+  font-size: 1.25rem;
+  color: rgba($bnz-ink, 0.18);
+  padding-top: 0.65rem;
+  flex-shrink: 0;
+}
+
+// ── CTA strip ────────────────────────────────────────────────────────────
+
+.bl-cta-strip {
+  background: $bnz-amber;
+  text-align: center;
+  padding: 5.5rem 2rem;
+}
+
+.bl-cta-mark {
+  opacity: 0.28;
+  display: block;
+  margin: 0 auto 1.75rem;
+}
+
+// Title-case Oswald — NOT uppercase, so it reads as warm/personal, not loud
+.bl-cta-title {
+  font-family: "Oswald", $font-family-sans-serif;
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  color: $bnz-ink;
+  max-width: 34rem;
+  margin: 0 auto 1rem;
+  line-height: 1.1;
+}
+
+.bl-cta-sub {
+  font-size: 0.95rem;
+  color: rgba($bnz-ink, 0.7);
+  max-width: 32rem;
+  margin: 0 auto 2.25rem;
+
+  .bl-emoji {
+    display: inline-block;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   }
 }
 

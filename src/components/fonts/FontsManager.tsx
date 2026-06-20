@@ -315,7 +315,18 @@ function GoogleImportForm({
 
   return (
     <Form className="bnz-card p-3 flex-grow-1" style={{ minWidth: 280 }} onSubmit={submit}>
-      <h2 className="h6 mb-3">Import from Google Fonts</h2>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h2 className="h6 mb-0">Import from Google Fonts</h2>
+        <a
+          href="https://fonts.google.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="small text-secondary text-decoration-none"
+          style={{ fontSize: "0.78rem" }}
+        >
+          Browse Google Fonts ↗
+        </a>
+      </div>
       <Form.Control
         type="text"
         size="sm"
