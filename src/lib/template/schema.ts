@@ -96,7 +96,7 @@ function placeholdersFromFabric(doc: TemplateDoc): PlaceholderDef[] {
 
   const out: PlaceholderDef[] = [];
   const seen = new Set<string>();
-  for (const raw of objects) {
+  for (const raw of [...objects].reverse()) {
     const o = raw as {
       bnzName?: unknown;
       bnzPlaceholder?: { kind?: unknown; label?: unknown };
