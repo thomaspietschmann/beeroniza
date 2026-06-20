@@ -1,0 +1,161 @@
+// App chrome: navbar, auth screens, landing, cards. Editor-specific styles
+// live in _editor.scss.
+
+body {
+  min-height: 100vh;
+}
+
+.bnz-brand {
+  text-decoration: none;
+}
+
+.bnz-brand-logo {
+  display: block;
+  height: 36px;
+  width: auto;
+}
+
+.bnz-brand-word {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-size: 1.35rem;
+  color: $bnz-ink;
+  background: linear-gradient(120deg, $bnz-indigo, lighten($bnz-indigo, 12%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// ── Navbar ───────────────────────────────────────────────────────────────
+.bnz-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid rgba(22, 20, 39, 0.08);
+
+  .nav-link {
+    font-weight: 600;
+    color: rgba(22, 20, 39, 0.66);
+    border-radius: $border-radius-sm;
+    padding-inline: 0.75rem;
+
+    &.active,
+    &:hover {
+      color: $bnz-ink;
+    }
+    &.active {
+      background: rgba(108, 92, 231, 0.1);
+    }
+  }
+}
+
+// ── Auth screens ───────────────────────────────────────────────────────────
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(60rem 60rem at 80% -10%, rgba(108, 92, 231, 0.12), transparent 60%),
+    radial-gradient(50rem 50rem at -10% 110%, rgba(255, 197, 66, 0.14), transparent 60%),
+    $bnz-surface;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  background: #fff;
+  border: 1px solid $card-border-color;
+  border-radius: $border-radius-xl;
+  box-shadow: $box-shadow;
+  padding: 2.25rem;
+
+  .auth-brand {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-size: 1.5rem;
+    text-decoration: none;
+    color: $bnz-indigo;
+  }
+}
+
+// ── Landing ──────────────────────────────────────────────────────────────
+.landing {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+.landing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 1rem 4rem;
+}
+.landing-hero {
+  text-align: center;
+  padding: 2rem 0 4rem;
+  max-width: 46rem;
+  margin: 0 auto;
+}
+.landing-features {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+
+  .feature {
+    background: #fff;
+    border: 1px solid $card-border-color;
+    border-radius: $border-radius-lg;
+    padding: 1.5rem;
+  }
+}
+
+// ── Generic cards / grid used across the app ───────────────────────────────
+.bnz-card {
+  background: #fff;
+  border: 1px solid $card-border-color;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-sm;
+}
+
+.bnz-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.bnz-stat {
+  @extend .bnz-card;
+  padding: 1.25rem 1.5rem;
+
+  .bnz-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: $bnz-ink;
+  }
+  .bnz-stat-label {
+    color: rgba(22, 20, 39, 0.6);
+    font-size: 0.9rem;
+  }
+}
+
+code,
+.bnz-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+// Copyable code block (API examples)
+.bnz-code-block {
+  background: $bnz-ink;
+  color: #e7e9ee;
+  border-radius: $border-radius;
+  padding: 1rem 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre;
+  code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; color: inherit; }
+}

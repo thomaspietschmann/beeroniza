@@ -1,0 +1,66 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+/dist
+
+# prisma
+/prisma/*.db
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env*.local
+
+# editor
+/.idea
+/.vscode
+
+# generated prisma client
+/src/generated
+
+# uploaded / generated assets in local dev
+/storage
+/public/generated
+
+# bundled font binaries are fetched at build time (npm run fonts:fetch),
+# never committed. The fetch script + manifest + _fonts.scss ARE committed.
+/public/fonts
+
+# playwright
+/test-results
+/playwright-report
+/.playwright-mcp
+
+# dev-only render test fixtures (large binaries, not used by the app)
+/test-assets
+
+# TS incremental build info
+*.tsbuildinfo
+
+# local MCP server config — contains secrets (API tokens), never commit
+/.mcp.json
+.playwright-mcp/
+
+# AI image generation prompts — local only, not committed
+/generation-prompts/
+/test-assets-generated/
+
+# Claude Code project config — local only
+/.claude/

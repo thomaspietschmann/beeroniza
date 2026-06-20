@@ -1,0 +1,77 @@
+# Local / self-hosted deployment. Two services: the app (Next.js + in-process
+# render worker + headless Chromium) and PostgreSQL (data + job queue + files).
+#
+#   cp .env.example .env   # set AUTH_SECRET at least
+#   docker compose up --build
+#
+# On Coolify you don't need this file: point Coolify at the Dockerfile, attach a
+# Postgres database, and set DATABASE_URL + AUTH_SECRET. Coolify's proxy handles
+# TLS/routing; the container just runs the Node server.
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: beeroniza
+      POSTGRES_PASSWORD: beeroniza
+      POSTGRES_DB: beeroniza
+    volumes:
+      - beeroniza_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beeroniza"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://beeroniza:beeroniza@postgres:5432/beeroniza?schema=public"
+      AUTH_SECRET: "${AUTH_SECRET:-change-me-please-generate-a-real-secret}"
+      # Public base URL for image links / webhooks (NOT used to reach the
+      # internal renderer — that always uses 127.0.0.1:PORT inside the container).
+      # Derived from the host port so it isn't accidentally overridden by an
+      # app-level .env's APP_URL during compose interpolation.
+      APP_URL: "http://localhost:${APP_PORT:-3000}"
+      AUTH_TRUST_HOST: "true"
+      # RUN_WORKER controls whether THIS replica pulls render jobs from the
+      # shared pg-boss queue. To scale horizontally, run multiple replicas of
+      # the full app image. Replicas share the same Postgres (job queue +
+      # optionally file storage); the renderer always calls 127.0.0.1:PORT, so
+      # each replica renders jobs it picks up itself — no remote renderer needed.
+      # With STORAGE_DRIVER=local, ALL replicas must mount the same volume;
+      # with STORAGE_DRIVER=db the bytes live in Postgres (no shared volume needed).
+      RUN_WORKER: "true"
+      # Store uploads + generated images on a mounted volume (keeps Postgres
+      # lean). Switch to "db" to store bytes in Postgres instead (no volume,
+      # required when running multiple app replicas without a shared volume).
+      STORAGE_DRIVER: "local"
+      STORAGE_LOCAL_PATH: "/app/storage"
+      # Self-registration disabled for now (test deployment): only the seeded
+      # admin account can sign in. Set to "true" to re-open public sign-ups.
+      # (The very first account is always allowed so an empty instance can be
+      # bootstrapped — once the admin user exists, registration is closed.)
+      ALLOW_REGISTRATION: "false"
+      PORT: "3000"
+    volumes:
+      - beeroniza_storage:/app/storage
+    ports:
+      # Override the host port with APP_PORT=... if 3000 is taken.
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+volumes:
+  beeroniza_pgdata:
+  beeroniza_storage:

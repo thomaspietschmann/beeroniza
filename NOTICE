@@ -1,0 +1,39 @@
+beeroniza
+=========
+
+The application code in this repository is source-available under the
+Beeroniza Source Available License 1.0, based on the Apache License 2.0 with
+the Beeroniza No-Sell Condition. See the LICENSE file for the full text.
+
+In short: you may use Beeroniza in your business and for commercial outputs,
+but you may not sell Beeroniza itself or offer it as a paid hosted service,
+managed service, SaaS, API service, on-demand image-generation service, or
+substantially similar commercial software offering.
+
+This project also bundles a curated set of open-source fonts under
+public/fonts/. These fonts are NOT part of the application code and remain
+under their original licenses — the SIL Open Font License (OFL) 1.1 or the
+Apache License 2.0. Each font is redistributed UNMODIFIED, together with its
+original license text in public/fonts/<family>/.
+
+For the per-font license details and source attribution, see
+THIRD_PARTY_LICENSES.md.
+
+Images rendered with these fonts carry no font-license restriction.
+
+npm dependencies
+================
+
+The following npm dependencies are licensed under the Apache License 2.0 and
+ship a NOTICE file of their own. Their NOTICE texts are reproduced in
+THIRD_PARTY_NOTICES.txt (generated at build/container time; not present in
+the source repository):
+
+  - playwright (Copyright (c) Microsoft Corporation; derived from Puppeteer)
+  - playwright-core (Copyright (c) Microsoft Corporation; derived from Puppeteer)
+  - @playwright/test (Copyright (c) Microsoft Corporation; derived from Puppeteer)
+  - @prisma/studio-core (Copyright (c) Prisma Data, Inc.)
+
+All other npm dependencies remain under their respective licenses; their
+license texts are available in the node_modules/ directory in build and
+container distributions.

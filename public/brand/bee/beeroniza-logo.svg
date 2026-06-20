@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Beeroniza logo mark</title>
+  <desc id="desc">A geometric bee combined with stacked image frames in the Beeroniza brand colors.</desc>
+  <g>
+    <rect x="266" y="302" width="344" height="420" rx="104" transform="rotate(-10 266 302)" fill="#6C5CE7"/>
+    <rect x="414" y="304" width="344" height="420" rx="104" transform="rotate(10 414 304)" fill="#FFC542"/>
+    <rect x="298" y="288" width="428" height="452" rx="128" fill="#F7F7FB" stroke="#161427" stroke-width="40"/>
+    <ellipse cx="416" cy="500" rx="108" ry="142" transform="rotate(-24 416 500)" fill="#6C5CE7"/>
+    <ellipse cx="608" cy="500" rx="108" ry="142" transform="rotate(24 608 500)" fill="#6C5CE7"/>
+    <path d="M488 304C468 286 452 270 438 248" fill="none" stroke="#161427" stroke-linecap="round" stroke-width="18"/>
+    <path d="M536 304C556 286 572 270 586 248" fill="none" stroke="#161427" stroke-linecap="round" stroke-width="18"/>
+    <circle cx="436" cy="246" r="12" fill="#161427"/>
+    <circle cx="588" cy="246" r="12" fill="#161427"/>
+    <circle cx="512" cy="344" r="46" fill="#FFC542"/>
+    <rect x="458" y="384" width="108" height="292" rx="54" fill="#FFC542"/>
+    <rect x="458" y="476" width="108" height="28" rx="14" fill="#161427"/>
+    <rect x="458" y="554" width="108" height="28" rx="14" fill="#161427"/>
+  </g>
+</svg>

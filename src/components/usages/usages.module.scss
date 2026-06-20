@@ -1,0 +1,148 @@
+// Co-located styles for the Usages feature. Themed to match the indigo primary
+// palette used across the app (see bnz-card and template-grid conventions).
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+
+  &:hover {
+    border-color: rgba(108, 92, 231, 0.45);
+  }
+}
+
+.rowMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--bs-body-color, #161427);
+}
+
+.rowMeta {
+  color: rgba(22, 20, 39, 0.55);
+  font-size: 0.85rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+// ── Fill view ──────────────────────────────────────────────────────────────
+
+.previewWrap {
+  position: sticky;
+  top: 1rem;
+}
+
+.previewFrame {
+  position: relative;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(22, 20, 39, 0.1);
+  background: repeating-conic-gradient(#eee 0% 25%, #f7f7fb 0% 50%) 50% / 16px 16px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+}
+
+.previewImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.previewLoading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.fieldThumb {
+  display: block;
+  margin-top: 0.5rem;
+  max-height: 90px;
+  max-width: 100%;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(22, 20, 39, 0.1);
+  object-fit: contain;
+}
+
+// Wraps the thumbnail so the focal-point marker can be absolutely positioned.
+.focalWrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  margin-top: 0.5rem;
+
+  .fieldThumb {
+    margin-top: 0; // the wrapper owns the top margin now
+  }
+}
+
+.focalMarker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px; // center the marker on its (left, top) point
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(108, 92, 231, 0.9);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.result {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(22, 20, 39, 0.1);
+  background: repeating-conic-gradient(#eee 0% 25%, #f7f7fb 0% 50%) 50% / 16px 16px;
+}
+
+.downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.downloadRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.downloadThumb {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(22, 20, 39, 0.1);
+  background: repeating-conic-gradient(#eee 0% 25%, #f7f7fb 0% 50%) 50% / 10px 10px;
+  flex: 0 0 auto;
+}
+
+.nameInput {
+  font-weight: 700;
+  font-size: 1.25rem;
+}

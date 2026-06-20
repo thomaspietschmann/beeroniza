@@ -1,0 +1,846 @@
+// Visual template editor — dark Canva-like chrome with a light canvas stage.
+// Layout: full-width top regions (topbar → tool strip) over a horizontal body.
+// The body is a row: the canvas stage fills the remaining width on the left, and
+// a fixed-width properties sidebar sits on the right. The sidebar's changing
+// per-selection content never resizes the top bars or shifts the canvas.
+// Layers and Template-inputs are floating, toggleable panels over the stage so
+// they never steal width from the canvas.
+.editor-root {
+  --editor-bg: #1b1d24;
+  --editor-panel-bg: #23262f;
+  --editor-panel-bg-2: #2a2e39;
+  --editor-border: #353a47;
+  --editor-text: #e7e9ee;
+  --editor-text-dim: #9aa1b1;
+  --editor-accent: #6c5ce7;
+  --editor-accent-2: #8a7bff;
+  --editor-dyn: #00d6a4;
+  --editor-stage: #11131a;
+}
+
+// Break the editor out of the parent (app) Container so it can fill the
+// viewport below the navbar.
+.bnz-editor-shell {
+  width: 100%;
+}
+
+.bnz-editor {
+  position: fixed;
+  inset: 0;
+  // The global navbar is hidden in the editor, so the workspace fills the
+  // whole viewport.
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  font-size: 0.875rem;
+  z-index: 1;
+}
+
+// ── Topbar (identity + global actions) ───────────────────────────────────────
+.bnz-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.875rem;
+  background: var(--editor-panel-bg);
+  border-bottom: 1px solid var(--editor-border);
+  flex: 0 0 auto;
+}
+
+.bnz-topbar-left,
+.bnz-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.bnz-back {
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--editor-text-dim);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  &:hover {
+    color: var(--editor-text);
+    background: var(--editor-panel-bg-2);
+  }
+}
+
+.bnz-name-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--editor-text);
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  min-width: 10rem;
+  max-width: 18rem;
+  &:hover { border-color: var(--editor-border); }
+  &:focus {
+    outline: none;
+    border-color: var(--editor-accent);
+    background: var(--editor-panel-bg-2);
+  }
+}
+
+.bnz-save-status {
+  font-size: 0.8rem;
+  color: var(--editor-text-dim);
+  white-space: nowrap;
+  &.bnz-save-saved { color: #44c98a; }
+  &.bnz-save-error { color: #ff6b6b; }
+}
+
+// Compact zoom control in the topbar.
+.bnz-zoom-ctl {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  overflow: hidden;
+  button {
+    background: var(--editor-panel-bg-2);
+    border: none;
+    color: var(--editor-text);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    &:not(:last-child) { border-right: 1px solid var(--editor-border); }
+    &:hover:not(:disabled) { background: var(--editor-border); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+  .bnz-zoom-ctl-val { min-width: 3.4rem; font-variant-numeric: tabular-nums; }
+}
+
+// ── Tool strip (add elements + canvas size + panel toggles) ──────────────────
+.bnz-toolstrip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--editor-panel-bg);
+  border-bottom: 1px solid var(--editor-border);
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
+.bnz-toolstrip-spacer { flex: 1 1 auto; }
+
+.bnz-toolstrip-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--editor-border);
+  margin: 0.1rem 0.2rem;
+}
+
+// Horizontal add-element toolbar.
+.bnz-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.bnz-toolbar-sep {
+  width: 1px;
+  height: 1.6rem;
+  background: var(--editor-border);
+  margin: 0 0.25rem;
+}
+
+.bnz-tool {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--editor-text-dim);
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+  &:hover:not(:disabled) {
+    background: var(--editor-panel-bg-2);
+    color: var(--editor-text);
+  }
+  &:disabled { opacity: 0.55; cursor: progress; }
+}
+
+.bnz-tool-icon { font-size: 1.05rem; line-height: 1; }
+.bnz-tool-label { font-size: 0.78rem; }
+
+// Compact canvas-size control (inline in the tool strip).
+.bnz-size-ctl {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--editor-text-dim);
+}
+.bnz-size-icon { font-size: 1rem; }
+.bnz-size-x { color: var(--editor-text-dim); }
+.bnz-size-preset { width: auto; max-width: 14rem; padding-right: 1.4rem; }
+.bnz-size-num {
+  width: 4.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+// Panel toggle chips.
+.bnz-panel-toggles { display: flex; gap: 0.4rem; }
+.bnz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--editor-panel-bg-2);
+  border: 1px solid var(--editor-border);
+  border-radius: 999px;
+  color: var(--editor-text-dim);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { color: var(--editor-text); }
+  &.is-active {
+    background: rgba(108, 92, 231, 0.18);
+    border-color: var(--editor-accent);
+    color: var(--editor-text);
+  }
+}
+.bnz-chip-count {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+// ── Properties sidebar (selected element) ────────────────────────────────────
+// The PropertiesPanel fills the fixed-width right sidebar as a vertical column:
+// identity header (top) → scrollable stacked field groups → Delete (bottom).
+.bnz-props {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  background: var(--editor-panel-bg-2);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.bnz-props-empty {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: var(--editor-text-dim);
+}
+.bnz-props-hint { font-size: 0.82rem; line-height: 1.4; }
+
+.bnz-props-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 0 0 auto;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--editor-border);
+}
+.bnz-props-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bnz-kind-pill {
+  display: inline-block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 5px;
+  color: #fff;
+  width: fit-content;
+}
+.bnz-kind-text { background: #6c5ce7; }
+.bnz-kind-image { background: #00b894; }
+.bnz-kind-rect { background: #e1705599; }
+.bnz-kind-circle { background: #0984e3; }
+.bnz-kind-other { background: #636e72; }
+
+// The vertically scrollable middle: stacked groups of fields + dynamic control.
+.bnz-props-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+// Each field group stacks its fields top-to-bottom in the narrow column. Fields
+// wrap to a tidy two-up grid where space allows (e.g. X/Y, W/H).
+.bnz-props-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.6rem;
+  flex: 0 0 auto;
+}
+
+// In the narrow sidebar a "narrow" field shares the row two-up; wide/default
+// fields take the full width.
+.bnz-props .bnz-field { flex: 1 1 100%; }
+.bnz-props .bnz-field-narrow { flex: 1 1 calc(50% - 0.3rem); width: auto; }
+.bnz-props .bnz-field-wide { width: auto; }
+
+// Horizontal divider between stacked groups (was a vertical rule in the strip).
+.bnz-props-vsep {
+  height: 1px;
+  width: 100%;
+  background: var(--editor-border);
+  flex: 0 0 auto;
+  margin: 0.1rem 0;
+}
+
+.bnz-props-del {
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: transparent;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  color: var(--editor-text-dim);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { color: #ff6b6b; border-color: #ff6b6b; }
+}
+
+// Image-frame hint shown for dynamic-image shapes.
+.bnz-imgframe-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--editor-dyn);
+  border: 1px dashed var(--editor-dyn);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  white-space: nowrap;
+}
+
+// Small explanatory hint under a props control (e.g. image fit).
+.bnz-field-hint {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--editor-text-dim);
+}
+
+// ── Body: horizontal row holding the canvas stage + properties sidebar ───────
+.bnz-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+}
+
+// Fixed-width right sidebar. Its width never changes with the selection; tall
+// content scrolls vertically inside it.
+.bnz-sidebar {
+  flex: 0 0 312px;
+  width: 312px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--editor-panel-bg-2);
+  border-left: 1px solid var(--editor-border);
+  overflow: hidden;
+}
+
+// ── Canvas stage fills the remaining width on the left ───────────────────────
+.bnz-canvas-area {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0)
+    0 0 / 24px 24px,
+    var(--editor-stage);
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.bnz-canvas-shadow {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  line-height: 0;
+  background: #fff;
+}
+
+.bnz-loading,
+.bnz-editor-error {
+  position: absolute;
+  color: var(--editor-text-dim);
+}
+
+.bnz-editor-error {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: #333;
+}
+
+.bnz-zoom-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--editor-panel-bg);
+  border: 1px solid var(--editor-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  color: var(--editor-text-dim);
+  pointer-events: none;
+}
+
+// ── Floating panels (Layers / Template inputs) ───────────────────────────────
+.bnz-float {
+  position: absolute;
+  top: 0.85rem;
+  bottom: 0.85rem;
+  width: 280px;
+  max-width: calc(50vw - 1rem);
+  background: var(--editor-panel-bg);
+  border: 1px solid var(--editor-border);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  padding: 0.9rem;
+  overflow-y: auto;
+  z-index: 5;
+}
+.bnz-float-left { left: 0.85rem; }
+.bnz-float-right { right: 0.85rem; }
+
+.bnz-float-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--editor-text-dim);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  &:hover { color: var(--editor-text); background: var(--editor-panel-bg-2); }
+}
+
+// ── Sections (used inside floating panels) ───────────────────────────────────
+.bnz-section { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.bnz-section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--editor-text-dim);
+  margin: 0;
+  font-weight: 700;
+}
+
+.bnz-section-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--editor-text-dim);
+}
+.bnz-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 0.4rem;
+}
+.bnz-dot-dyn { background: var(--editor-dyn); margin-left: 0; }
+.bnz-dot-static { background: var(--editor-text-dim); }
+
+.bnz-empty {
+  color: var(--editor-text-dim);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+// ── Fields & inputs ──────────────────────────────────────────────────────────
+.bnz-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.bnz-field-narrow { width: 4.6rem; }
+.bnz-field-wide { width: 14rem; }
+
+.bnz-field-label {
+  font-size: 0.66rem;
+  color: var(--editor-text-dim);
+  white-space: nowrap;
+}
+
+.bnz-row { display: flex; gap: 0.6rem; align-items: flex-end; }
+
+.bnz-input {
+  background: var(--editor-panel-bg);
+  border: 1px solid var(--editor-border);
+  border-radius: 7px;
+  color: var(--editor-text);
+  padding: 0.35rem 0.5rem;
+  width: 100%;
+  font-size: 0.8rem;
+  &:focus {
+    outline: none;
+    border-color: var(--editor-accent);
+  }
+}
+
+// Inside the dark props strip, lighten input wells slightly for contrast.
+.bnz-props .bnz-input { background: var(--editor-panel-bg); }
+
+textarea.bnz-input { resize: vertical; }
+
+.bnz-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.bnz-color {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  input[type="color"] {
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 1px solid var(--editor-border);
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+  }
+}
+
+// Row that pairs an input with the brand-kit save (★) toggle.
+.bnz-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  select.bnz-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.bnz-swatch-save {
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--editor-border);
+  border-radius: 7px;
+  background: transparent;
+  color: #f4b400;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.bnz-swatch-save:hover {
+  border-color: var(--bs-primary, #6c5ce7);
+}
+
+// Saved brand colours, click to apply to the selected layer.
+.bnz-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.bnz-swatch {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 5px;
+  border: 1px solid var(--editor-border);
+  padding: 0;
+  cursor: pointer;
+}
+.bnz-swatch:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.4);
+}
+
+.bnz-segmented {
+  display: flex;
+  border: 1px solid var(--editor-border);
+  border-radius: 7px;
+  overflow: hidden;
+  button {
+    flex: 1 1 0;
+    background: var(--editor-panel-bg);
+    border: none;
+    color: var(--editor-text-dim);
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    &:not(:last-child) { border-right: 1px solid var(--editor-border); }
+    &.is-active { background: var(--editor-accent); color: #fff; }
+    &:hover:not(.is-active) { color: var(--editor-text); }
+  }
+}
+.bnz-segmented-wide button { text-transform: capitalize; }
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+.bnz-btn {
+  background: var(--editor-panel-bg-2);
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  color: var(--editor-text);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  &:hover { border-color: var(--editor-accent); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.bnz-btn-block { width: 100%; }
+
+.bnz-btn-primary {
+  background: var(--editor-accent);
+  border-color: var(--editor-accent);
+  color: #fff;
+  &:hover { background: var(--editor-accent-2); border-color: var(--editor-accent-2); }
+}
+
+// ── Badges ───────────────────────────────────────────────────────────────────
+.bnz-badge {
+  display: inline-block;
+  background: rgba(108, 92, 231, 0.2);
+  color: var(--editor-accent-2);
+  border: 1px solid rgba(108, 92, 231, 0.4);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.bnz-badge-sm { font-size: 0.6rem; padding: 0.02rem 0.4rem; }
+.bnz-badge-static {
+  background: transparent;
+  color: var(--editor-text-dim);
+  border-color: var(--editor-border);
+}
+
+// ── Layers ───────────────────────────────────────────────────────────────────
+.bnz-layers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.bnz-layer {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  &:hover { background: var(--editor-panel-bg-2); }
+  &.is-dynamic { border-left-color: var(--editor-dyn); }
+  &.is-active {
+    background: var(--editor-panel-bg-2);
+    border-color: var(--editor-accent);
+  }
+}
+
+.bnz-layer-main {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--editor-text);
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.bnz-layer-icon {
+  width: 1.1rem;
+  text-align: center;
+  color: var(--editor-text-dim);
+}
+
+.bnz-layer-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bnz-layer-actions {
+  display: flex;
+  gap: 0.1rem;
+  padding-right: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.12s;
+  button {
+    background: transparent;
+    border: none;
+    color: var(--editor-text-dim);
+    cursor: pointer;
+    padding: 0.2rem 0.25rem;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    line-height: 1;
+    &:hover { color: var(--editor-text); background: rgba(255, 255, 255, 0.06); }
+  }
+}
+
+.bnz-layer:hover .bnz-layer-actions,
+.bnz-layer.is-active .bnz-layer-actions { opacity: 1; }
+
+// ── Dynamic field control (lives in the properties sidebar) ──────────────────
+.bnz-dyn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  flex: 0 0 auto;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--editor-border);
+  border-radius: 9px;
+  background: var(--editor-panel-bg);
+  &.is-on {
+    border-color: var(--editor-dyn);
+    box-shadow: inset 0 0 0 1px rgba(0, 214, 164, 0.25);
+  }
+}
+.bnz-dyn-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  white-space: nowrap;
+  input { accent-color: var(--editor-dyn); width: 1rem; height: 1rem; }
+  strong { display: block; font-size: 0.82rem; }
+}
+.bnz-dyn-toggle-text { display: flex; flex-direction: column; line-height: 1.15; }
+.bnz-dyn-sub {
+  display: block;
+  color: var(--editor-text-dim);
+  font-size: 0.68rem;
+}
+.bnz-dyn-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+// Inside the stacked dynamic body every field spans the full width.
+.bnz-dyn-body .bnz-field,
+.bnz-dyn-body .bnz-field-narrow { flex: 1 1 100%; width: auto; }
+.bnz-warn {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #ffc542;
+  white-space: normal;
+}
+.bnz-api-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--editor-stage);
+  border: 1px solid var(--editor-border);
+  border-radius: 7px;
+  padding: 0.35rem 0.5rem;
+  overflow-x: auto;
+  code {
+    color: var(--editor-dyn);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+// ── Template inputs list (floating panel) ────────────────────────────────────
+.bnz-inputs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.bnz-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--editor-border);
+  border-radius: 7px;
+  cursor: pointer;
+  &:hover { border-color: var(--editor-accent); background: var(--editor-panel-bg-2); }
+}
+.bnz-input-key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--editor-text);
+}
+.bnz-input-label {
+  color: var(--editor-text-dim);
+  font-size: 0.72rem;
+  margin-left: auto;
+  text-align: right;
+}
+.bnz-type-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  color: #fff;
+}
+.bnz-type-text { background: #6c5ce7; color: #fff; border-color: transparent; }
+.bnz-type-image { background: #00b894; color: #fff; border-color: transparent; }
+.bnz-type-color { background: #e17055; color: #fff; border-color: transparent; }

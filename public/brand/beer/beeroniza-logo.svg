@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Beeroniza beer logo mark</title>
+  <desc id="desc">A geometric beer glass combined with stacked image frames in the Beeroniza brand colors.</desc>
+  <g>
+    <rect x="266" y="302" width="344" height="420" rx="104" transform="rotate(-10 266 302)" fill="#6C5CE7"/>
+    <rect x="414" y="304" width="344" height="420" rx="104" transform="rotate(10 414 304)" fill="#FFC542"/>
+    <rect x="298" y="288" width="428" height="452" rx="128" fill="#F7F7FB" stroke="#161427" stroke-width="40"/>
+    <path d="M444 434H580C594 434 606 446 606 460V640C606 670 582 694 552 694H472C442 694 418 670 418 640V460C418 446 430 434 444 434Z" fill="#FFC542"/>
+    <path d="M604 470H648C680 470 706 496 706 528V564C706 596 680 622 648 622H612" fill="none" stroke="#6C5CE7" stroke-linecap="round" stroke-linejoin="round" stroke-width="28"/>
+    <rect x="452" y="506" width="120" height="22" rx="11" fill="#161427" fill-opacity="0.18"/>
+    <rect x="452" y="552" width="120" height="22" rx="11" fill="#161427" fill-opacity="0.18"/>
+    <rect x="452" y="598" width="120" height="22" rx="11" fill="#161427" fill-opacity="0.18"/>
+    <path d="M414 418C414 386 440 360 472 360H486C496 336 518 320 544 320C576 320 602 344 604 374C636 378 660 404 660 436C660 470 632 498 598 498H468C438 498 414 474 414 444V418Z" fill="#F7F7FB" stroke="#161427" stroke-width="24" stroke-linejoin="round"/>
+    <circle cx="470" cy="390" r="18" fill="#F7F7FB"/>
+    <circle cx="516" cy="364" r="24" fill="#F7F7FB"/>
+    <circle cx="566" cy="384" r="20" fill="#F7F7FB"/>
+  </g>
+</svg>
