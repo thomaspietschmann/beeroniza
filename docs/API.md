@@ -24,7 +24,8 @@ Keys can be given an expiration date and rotated/revoked from the dashboard.
 
 1. **Discover templates and their placeholders** — `GET /api/v1/templates`.
    Each template lists `placeholders`: named, typed slots (`text`, `image`,
-   `color`) you can fill.
+   `color`) you can fill. All templates of an instance are shared across all
+   users and API keys — there is no per-user visibility.
 2. **Provide image bytes** (only if a placeholder is of type `image`):
    - pass a public `image_url`, **or**
    - pass an inline `data:image/...;base64,...` URL directly in the

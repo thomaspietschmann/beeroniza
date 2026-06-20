@@ -5,11 +5,10 @@ import { TemplateGrid, type TemplateListItem } from "@/components/templates/Temp
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
-  const user = await requireUser();
-  const userId = user.id as string;
+  await requireUser();
 
   const rows = await prisma.template.findMany({
-    where: { userId },
+    where: {},
     orderBy: [{ platform: "asc" }, { formatLabel: "asc" }, { updatedAt: "desc" }],
     select: {
       id: true,

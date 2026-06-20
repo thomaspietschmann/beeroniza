@@ -7,7 +7,7 @@ import { withApiKey, json } from "@/lib/api-helpers";
 // their placeholders so callers know what they can fill in.
 export const GET = withApiKey(async (_req, user) => {
   const templates = await prisma.template.findMany({
-    where: { userId: user.id },
+    where: {},
     orderBy: { updatedAt: "desc" },
   });
 

@@ -44,8 +44,9 @@ function maskPrefix(prefix: string): string {
 }
 
 function curlSnippet(plaintext: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   return [
-    "curl -X POST https://your-instance/api/v1/images \\",
+    `curl -X POST ${origin}/api/v1/images \\`,
     `  -H "Authorization: Bearer ${plaintext}" \\`,
     '  -H "Content-Type: application/json" \\',
     `  -d '{"template_id":"<id>","modifications":[{"name":"title","text":"Hello"}],"format":"png"}'`,

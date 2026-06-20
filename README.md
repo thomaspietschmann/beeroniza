@@ -36,6 +36,7 @@ That's it.
 - **16 bundled font families** (Inter, Roboto, Montserrat, Playfair Display, JetBrains Mono, and more) — served locally, no external CDN
 - **Custom font upload** — bring your own typefaces
 - **SSO / OIDC support** — integrate with Keycloak, Authentik, Zitadel, or any OpenID Connect provider
+- **Shared workspace** — templates and media are visible to all users of an instance; multi-tenant isolation is not yet implemented
 - **Fully self-contained** — your content and assets never leave your server
 
 ---
