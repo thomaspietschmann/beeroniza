@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 // "X-Forwarded-For: 127.0.0.1" would survive as the left-most entry and defeat
 // an IP check. A secret the external world cannot know is spoof-proof; Traefik
 // forwards the header verbatim but an attacker has no way to guess AUTH_SECRET.
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const secret = process.env.AUTH_SECRET ?? "";
   const provided = req.headers.get("x-bnz-internal-render") ?? "";
   if (!secret || provided !== secret) {

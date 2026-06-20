@@ -20,6 +20,7 @@ export async function getBoss(): Promise<PgBoss> {
       await boss.start();
       // Idempotent: ignore "already exists".
       await boss.createQueue(RENDER_QUEUE).catch(() => undefined);
+      await boss.createQueue(CLEANUP_API_KEYS_QUEUE).catch(() => undefined);
       return boss;
     })();
   }
