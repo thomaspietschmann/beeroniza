@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Hide the floating dev-mode indicator badge (dev only; no production effect).
+  devIndicators: false,
   // Playwright / pg-boss are server-only deps that must never be bundled into
   // the client or traced into edge runtimes.
   serverExternalPackages: ["playwright", "playwright-core", "pg-boss", "pg", "bcryptjs"],

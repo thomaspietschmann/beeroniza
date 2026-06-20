@@ -1,6 +1,10 @@
-# Beeroniza
+<div align="center">
+  <img src="public/brand/bee/beeroniza-logo.png" alt="Beeroniza logo" width="120" />
+  <h1>Beeroniza</h1>
+  <p><strong>Self-hosted image generation from visual templates — browser editor included, REST API included.</strong></p>
+</div>
 
-**Self-hosted image generation from visual templates — browser editor included, REST API included.**
+![Beeroniza landing page — "Template once. Generate forever."](docs/screenshots/landing.png)
 
 ---
 
@@ -10,7 +14,7 @@ Beeroniza is a small, source-available tool that lets you design image templates
 
 Think: social media cards, OpenGraph banners, post thumbnails, event visuals. You design the layout once, mark the parts that should change (headline, author photo, logo, background color), and from that point on you can generate new images just by filling in those blanks.
 
-**Why does this exist?** I needed exactly this and couldn't find anything that worked the way I wanted: simple, self-hostable, with a real visual editor and an API for automation. Commercial services for this either charge per generated image (which adds up fast) or require sending all your content to their servers. So I built my own.
+**Why does this exist?** I built Beeroniza because I wanted a self-hosted alternative to tools like Bannerbear and Placid that does only the part I actually need — design a template, mark the dynamic parts, generate images via API — without the rest, and without a monthly subscription or having to send all my content to someone else's servers. So I built my own, smaller take on it.
 
 Is this a replacement for polished, fully-featured paid services? Probably not — those have dedicated teams and roadmaps. But if "generate pretty decent-looking preview images and social posts from a template via API" is what you need, this might be all you need. And if it is, you can save yourself quite a bit of money.
 
@@ -23,6 +27,8 @@ Is this a replacement for polished, fully-featured paid services? Probably not �
 3. **Generate images** — either fill in the placeholders through the web UI and download the PNG, or call the REST API from your own application and get a generated image back.
 
 That's it.
+
+![The Beeroniza visual editor — composing a social media image from a template with text, background, and avatar placeholders](docs/screenshots/editor.png)
 
 ---
 
@@ -225,6 +231,8 @@ Full attribution and license texts: [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LI
 The application code is source-available under the **[Beeroniza Source Available License 1.0](./LICENSE)**, based on Apache 2.0 with an additional no-sell condition.
 
 You may use Beeroniza personally, internally, or in your business, including to create commercial images and other outputs. You may not sell Beeroniza itself, charge for access to it, or offer it as a paid hosted service, managed service, SaaS, API service, on-demand image-generation service, or substantially similar commercial software product.
+
+*Bannerbear and Placid are trademarks of their respective owners. Beeroniza is an independent project and is not affiliated with, endorsed by, or sponsored by them; they are mentioned only to describe the kind of tool this is.*
 
 ---
 
