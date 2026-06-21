@@ -16,6 +16,8 @@ const updateSchema = z.object({
   width: z.number().int().positive().max(8000).optional(),
   height: z.number().int().positive().max(8000).optional(),
   data: templateDocSchema.optional(),
+  // When set, the update is conditional: if updatedAt no longer matches, 409 is returned.
+  expectedUpdatedAt: z.string().datetime().optional(),
 });
 
 export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
@@ -26,16 +28,28 @@ export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) =
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return badRequest("Invalid update", parsed.error.issues);
 
-  const { name, width, height, data } = parsed.data;
-  const template = await prisma.template.update({
-    where: { id },
-    data: {
-      ...(name !== undefined ? { name } : {}),
-      ...(width !== undefined ? { width } : {}),
-      ...(height !== undefined ? { height } : {}),
-      ...(data !== undefined ? { data: data as object } : {}),
-    },
-  });
+  const { name, width, height, data, expectedUpdatedAt } = parsed.data;
+  const updateData = {
+    ...(name !== undefined ? { name } : {}),
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(data !== undefined ? { data: data as object } : {}),
+  };
+
+  if (expectedUpdatedAt !== undefined) {
+    const result = await prisma.template.updateMany({
+      where: { id, updatedAt: new Date(expectedUpdatedAt) },
+      data: updateData,
+    });
+    if (result.count === 0) {
+      const current = await prisma.template.findFirst({ where: { id } });
+      return json({ error: "conflict", current }, 409);
+    }
+    const template = await prisma.template.findFirst({ where: { id } });
+    return json({ template });
+  }
+
+  const template = await prisma.template.update({ where: { id }, data: updateData });
   return json({ template });
 });
 

@@ -41,6 +41,7 @@ export interface TemplateResponse {
     width: number;
     height: number;
     data: unknown;
+    updatedAt: string;
   };
 }
 

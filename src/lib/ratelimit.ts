@@ -17,18 +17,18 @@ export async function checkRateLimit(
   const windowStart = new Date(now.getTime() - opts.windowMs);
 
   const result = await prisma.$queryRaw<
-    { count: bigint; window_start: Date }[]
+    { count: bigint; windowStart: Date }[]
   >`
-    INSERT INTO rate_limits (key, count, window_start)
+    INSERT INTO rate_limits (key, count, "windowStart")
     VALUES (${key}, 1, ${now})
     ON CONFLICT (key) DO UPDATE SET
-      count       = CASE WHEN rate_limits.window_start < ${windowStart}
-                         THEN 1
-                         ELSE rate_limits.count + 1 END,
-      window_start = CASE WHEN rate_limits.window_start < ${windowStart}
-                          THEN ${now}
-                          ELSE rate_limits.window_start END
-    RETURNING count, window_start
+      count         = CASE WHEN rate_limits."windowStart" < ${windowStart}
+                           THEN 1
+                           ELSE rate_limits.count + 1 END,
+      "windowStart" = CASE WHEN rate_limits."windowStart" < ${windowStart}
+                           THEN ${now}
+                           ELSE rate_limits."windowStart" END
+    RETURNING count, "windowStart"
   `;
 
   const row = result[0];
@@ -36,7 +36,7 @@ export async function checkRateLimit(
   const allowed = count <= opts.limit;
 
   if (!allowed) {
-    const windowEndMs = row.window_start.getTime() + opts.windowMs;
+    const windowEndMs = row.windowStart.getTime() + opts.windowMs;
     const retryAfterMs = Math.max(0, windowEndMs - now.getTime());
     return { allowed: false, retryAfterMs };
   }

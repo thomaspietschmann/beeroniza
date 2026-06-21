@@ -40,13 +40,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  templates   Template[]
-  apiKeys     ApiKey[]
-  generations ImageGeneration[]
-  fonts       Font[]
-  files       StoredFile[]
-  usages      Usage[]
-  brandKits   BrandKit[]
+  templates       Template[]
+  apiKeys         ApiKey[]
+  generations     ImageGeneration[]
+  fonts           Font[]
+  files           StoredFile[]
+  usages          Usage[]
+  brandKits       BrandKit[]
+  lockedTemplates Template[] @relation("TemplateLock")
 
   @@map("users")
 }
@@ -86,11 +87,16 @@ model Template {
   // placeholder metadata. See src/lib/template/schema.ts.
   data        Json
   // Monotonically increasing published version counter.
-  version     Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // Soft-lock for concurrent edit prevention. Held by the user currently in the editor;
+  // expires after LOCK_TTL_MS of no heartbeat.
+  lockedById  String?
+  lockedAt    DateTime?
 
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lockedBy    User?             @relation("TemplateLock", fields: [lockedById], references: [id], onDelete: SetNull)
   versions    TemplateVersion[]
   generations ImageGeneration[]
   usages      Usage[]

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Alert from "react-bootstrap/Alert";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import {
@@ -10,6 +11,7 @@ import {
   SCHEMA_VERSION,
   type TemplateDoc,
 } from "@/lib/template/schema";
+import { LOCK_HEARTBEAT_MS, type LockInfo } from "@/lib/template-lock";
 import type { TemplateResponse } from "./types";
 import { useFabricEditor } from "./useFabricEditor";
 import { Toolbar } from "./Toolbar";
@@ -20,6 +22,7 @@ import { TemplateInputs } from "./TemplateInputs";
 import { NewUsageModal } from "@/components/usages/NewUsageModal";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type LockState = "pending" | "editing" | "readonly";
 
 function coerceDoc(raw: unknown, width: number, height: number): TemplateDoc {
   const parsed = templateDocSchema.safeParse(raw);
@@ -38,6 +41,13 @@ export function EditorApp({ id }: { id: string }) {
   const [name, setName] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  // Concurrent-edit lock state.
+  const [lockState, setLockState] = useState<LockState>("pending");
+  const [lockInfo, setLockInfo] = useState<LockInfo | null>(null);
+  const [showTakeoverModal, setShowTakeoverModal] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const baseUpdatedAt = useRef<string | null>(null);
 
   // Floating panel visibility (Layers / Template inputs). Off-canvas chrome so
   // the stage stays full-width.
@@ -70,7 +80,7 @@ export function EditorApp({ id }: { id: string }) {
       .catch(() => { /* ignore; bundled fonts from the layout link still work */ });
   }, []);
 
-  // Load the template once.
+  // Load the template once, then acquire the edit lock.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -79,10 +89,25 @@ export function EditorApp({ id }: { id: string }) {
         if (!res.ok) throw new Error("Failed to load template");
         const data = (await res.json()) as TemplateResponse;
         if (cancelled) return;
+        baseUpdatedAt.current = data.template.updatedAt;
         setName(data.template.name);
         setDoc(
           coerceDoc(data.template.data, data.template.width, data.template.height),
         );
+
+        const lockRes = await fetch(`/api/templates/${id}/lock`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "acquire" }),
+        });
+        if (cancelled) return;
+        if (lockRes.ok) {
+          setLockState("editing");
+        } else if (lockRes.status === 409) {
+          const lockData = (await lockRes.json()) as { lock: LockInfo | null };
+          setLockInfo(lockData.lock);
+          setShowTakeoverModal(true);
+        }
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : "Failed to load");
@@ -94,8 +119,42 @@ export function EditorApp({ id }: { id: string }) {
     };
   }, [id]);
 
-  const save = useCallback(async () => {
-    if (!editor.ready) return;
+  // Heartbeat: refresh the lock every LOCK_HEARTBEAT_MS while we hold it.
+  useEffect(() => {
+    if (lockState !== "editing") return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/templates/${id}/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "heartbeat" }),
+      });
+      if (cancelled) return;
+      if (res.status === 409) {
+        const resData = (await res.json()) as { lock: LockInfo | null };
+        setLockState("readonly");
+        setLockInfo(resData.lock ?? null);
+      }
+    }, LOCK_HEARTBEAT_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [id, lockState]);
+
+  // Release the lock when navigating away within the SPA (component unmounts).
+  useEffect(() => {
+    return () => {
+      fetch(`/api/templates/${id}/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "release" }),
+      }).catch(() => {});
+    };
+  }, [id]);
+
+  const save = useCallback(async (force = false): Promise<boolean> => {
+    if (!editor.ready || lockState !== "editing") return false;
     setSaveState("saving");
     try {
       const data = editor.serialize();
@@ -107,17 +166,52 @@ export function EditorApp({ id }: { id: string }) {
           width: data.canvas.width,
           height: data.canvas.height,
           data,
+          ...(!force && baseUpdatedAt.current
+            ? { expectedUpdatedAt: baseUpdatedAt.current }
+            : {}),
         }),
       });
+      if (res.status === 409) {
+        setSaveState("error");
+        setShowConflictModal(true);
+        return false;
+      }
       if (!res.ok) throw new Error("Save failed");
+      const saved = (await res.json()) as TemplateResponse;
+      baseUpdatedAt.current = saved.template.updatedAt;
       setSaveState("saved");
       setDirty(false);
       baselineRevision.current = editor.revision;
       setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2000);
+      return true;
     } catch {
       setSaveState("error");
+      return false;
     }
-  }, [editor, id, name]);
+  }, [editor, id, name, lockState]);
+
+  const takeLock = useCallback(async () => {
+    setShowTakeoverModal(false);
+    const res = await fetch(`/api/templates/${id}/lock`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "acquire", force: true }),
+    });
+    if (res.ok) {
+      setLockState("editing");
+      setLockInfo(null);
+    }
+  }, [id]);
+
+  const viewOnly = useCallback(() => {
+    setShowTakeoverModal(false);
+    setLockState("readonly");
+  }, []);
+
+  const forceSave = useCallback(() => {
+    setShowConflictModal(false);
+    void save(true);
+  }, [save]);
 
   // Cmd/Ctrl+S saves; Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z or Ctrl+Y redoes.
   useEffect(() => {
@@ -162,9 +256,14 @@ export function EditorApp({ id }: { id: string }) {
     }
   }, [editor.revision]);
 
-  // Native guard for tab close / hard navigation.
+  // Native guard for tab close / hard navigation. Also releases the lock via
+  // sendBeacon (works even as the page is closing, unlike fetch).
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
+      navigator.sendBeacon(
+        `/api/templates/${id}/lock`,
+        new Blob([JSON.stringify({ action: "release" })], { type: "application/json" }),
+      );
       if (dirty) {
         e.preventDefault();
         e.returnValue = "";
@@ -172,10 +271,13 @@ export function EditorApp({ id }: { id: string }) {
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
+  }, [id, dirty]);
 
   const requestUse = useCallback(async () => {
-    if (dirty) await save();
+    if (dirty) {
+      const ok = await save();
+      if (!ok) return;
+    }
     setShowUse(true);
   }, [dirty, save]);
 
@@ -184,8 +286,8 @@ export function EditorApp({ id }: { id: string }) {
     else router.push("/templates");
   }, [dirty, router]);
   const saveAndLeave = useCallback(async () => {
-    await save();
-    router.push("/templates");
+    const ok = await save();
+    if (ok) router.push("/templates");
   }, [save, router]);
   const leaveWithoutSaving = useCallback(() => {
     setDirty(false);
@@ -225,8 +327,16 @@ export function EditorApp({ id }: { id: string }) {
         onUse={requestUse}
         saveState={saveState}
         ready={editor.ready}
+        readOnly={lockState !== "editing"}
         editor={editor}
       />
+
+      {/* ── Read-only lock banner ───────────────────────────────────────── */}
+      {lockState === "readonly" && (
+        <Alert variant="warning" className="mb-0 py-2 text-center small rounded-0">
+          <strong>{lockInfo?.lockedByName ?? "Someone"}</strong> is editing this template — you are in read-only mode.
+        </Alert>
+      )}
 
       {/* ── Tool strip: add elements + canvas size + panel toggles ─────── */}
       <div className="bnz-toolstrip">
@@ -319,6 +429,53 @@ export function EditorApp({ id }: { id: string }) {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* ── Takeover modal: another user already holds the lock ─────────── */}
+      <Modal show={showTakeoverModal} onHide={() => {}} backdrop="static" centered>
+        <Modal.Header>
+          <Modal.Title className="h6">Template is being edited</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <strong>{lockInfo?.lockedByName ?? "Another user"}</strong> is currently
+          editing this template
+          {lockInfo?.lockedAt
+            ? ` (since ${new Date(lockInfo.lockedAt).toLocaleTimeString()})`
+            : ""}
+          . You can view it in read-only mode or take over editing (they will be
+          notified on their next save attempt).
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={viewOnly}>
+            View only
+          </Button>
+          <Button variant="primary" onClick={takeLock}>
+            Take over
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── Conflict modal: template was modified while we were editing ─── */}
+      <Modal show={showConflictModal} onHide={() => setShowConflictModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h6">Conflicting changes</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          This template was saved by someone else while you were editing. You can
+          reload to see their version (your local changes will be lost) or
+          overwrite with your version.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-danger" onClick={() => window.location.reload()}>
+            Reload (discard my changes)
+          </Button>
+          <Button variant="outline-secondary" onClick={() => setShowConflictModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="warning" onClick={forceSave}>
+            Overwrite
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
@@ -356,6 +513,7 @@ function Topbar({
   onUse,
   saveState,
   ready,
+  readOnly,
   editor,
 }: {
   name: string;
@@ -365,6 +523,7 @@ function Topbar({
   onUse: () => void;
   saveState: SaveState;
   ready: boolean;
+  readOnly: boolean;
   editor: ReturnType<typeof useFabricEditor>;
 }) {
   const statusText: Record<SaveState, string> = {
@@ -441,7 +600,7 @@ function Topbar({
           type="button"
           className="bnz-btn bnz-btn-primary"
           onClick={onSave}
-          disabled={!ready || saveState === "saving"}
+          disabled={!ready || saveState === "saving" || readOnly}
         >
           Save
         </button>
