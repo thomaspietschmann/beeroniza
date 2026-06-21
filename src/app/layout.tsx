@@ -6,12 +6,25 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3939"),
   title: {
     default: "Beeroniza",
     template: "%s · Beeroniza",
   },
   description:
     "Self-hosted image generation from visual templates — web editor and REST API.",
+  openGraph: {
+    title: "Beeroniza",
+    description: "Self-hosted image generation from visual templates — web editor and REST API.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Beeroniza",
+    description: "Self-hosted image generation from visual templates — web editor and REST API.",
+    images: ["/og-image.png"],
+  },
   manifest: "/site.webmanifest",
   icons: {
     icon: [

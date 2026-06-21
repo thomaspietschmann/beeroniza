@@ -14,7 +14,7 @@ export const GET = withUserParams<{ id: string }>(async (_req, userId, { id }) =
   if (!usage) return notFound();
 
   return json({
-    usage: { id: usage.id, name: usage.name, values: usage.values, templateId: usage.templateId },
+    usage: { id: usage.id, name: usage.name, values: usage.values, templateId: usage.templateId, brandKitId: usage.brandKitId },
     template: {
       id: usage.template.id,
       name: usage.template.name,

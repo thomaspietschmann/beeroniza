@@ -240,7 +240,7 @@ function ShapeProps({ editor, obj }: { editor: FabricEditor; obj: EditorObject }
       <Field label="Stroke" narrow>
         <ColorInput
           value={String(s.stroke ?? "#000000")}
-          onChange={(v) => editor.updateSelectedProp({ stroke: v }, silent)}
+          onChange={(v) => editor.updateSelectedProp({ stroke: v, strokeDashArray: null }, silent)}
         />
       </Field>
       <Field label="Stroke W" narrow>
@@ -249,7 +249,7 @@ function ShapeProps({ editor, obj }: { editor: FabricEditor; obj: EditorObject }
           type="number"
           min={0}
           defaultValue={s.strokeWidth ?? 0}
-          onChange={(e) => editor.updateSelectedProp({ strokeWidth: Number(e.target.value) }, silent)}
+          onChange={(e) => editor.updateSelectedProp({ strokeWidth: Number(e.target.value), strokeDashArray: null }, silent)}
         />
       </Field>
     </div>
@@ -585,8 +585,9 @@ function Field({
 
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const normalized = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value) ? value : "#000000";
-  const { colors, addColor, removeColor } = useBrandKit();
-  const saved = colors.includes(normalized);
+  const { palettes, addColor, removeColor } = useBrandKit();
+  const inAnyPalette = palettes.some((p) => p.colors.includes(normalized));
+  const hasPaletteColors = palettes.some((p) => p.colors.length > 0);
   return (
     <div className="bnz-color">
       <div className="bnz-color-row">
@@ -594,28 +595,34 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
         <button
           type="button"
           className="bnz-swatch-save"
-          aria-label={saved ? "Remove from brand kit" : "Save color to brand kit"}
-          title={saved ? "Saved in brand kit — click to remove" : "Save color to brand kit"}
-          onClick={() => (saved ? removeColor(normalized) : addColor(normalized))}
+          aria-label={inAnyPalette ? "Aus Palette entfernen" : "Zu Palette hinzufügen"}
+          title={inAnyPalette ? "Aus Palette entfernen" : "Zu Palette hinzufügen"}
+          onClick={() => (inAnyPalette ? removeColor(normalized) : addColor(normalized))}
         >
-          {saved ? "★" : "☆"}
+          {inAnyPalette ? "−" : "+"}
         </button>
       </div>
-      {colors.length > 0 && (
-        <div className="bnz-swatches" role="group" aria-label="Brand colors">
-          {colors.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className="bnz-swatch"
-              style={{ background: c }}
-              title={c}
-              aria-label={`Use ${c}`}
-              onClick={() => onChange(c)}
-            />
+      {hasPaletteColors &&
+        palettes
+          .filter((p) => p.colors.length > 0)
+          .map((palette) => (
+            <div key={palette.id} className="bnz-palette-group">
+              <span className="bnz-palette-name">{palette.name}</span>
+              <div className="bnz-swatches" role="group" aria-label={palette.name}>
+                {palette.colors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className="bnz-swatch"
+                    style={{ background: c }}
+                    title={c}
+                    aria-label={`Farbe ${c} verwenden`}
+                    onClick={() => onChange(c)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
-        </div>
-      )}
     </div>
   );
 }

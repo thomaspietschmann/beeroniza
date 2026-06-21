@@ -90,6 +90,7 @@ body {
 // ── Landing ──────────────────────────────────────────────────────────────
 
 .bnz-landing {
+  --bl-nav-h: 4rem;
   background: $bnz-surface;
 }
 
@@ -115,6 +116,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 4rem;
+  height: var(--bl-nav-h);
 
   @media (max-width: 768px) { padding: 1rem 1.5rem; }
 }
@@ -165,13 +167,18 @@ body {
 
 .bl-hero {
   background: $bnz-ink;
-  padding-block: 1.75rem 2.5rem;
+  height: calc(100dvh - var(--bl-nav-h));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 
 .bl-hero-inner {
+  width: 100%;
   max-width: 76rem;
   margin: 0 auto;
   padding-inline: 4rem;
+  padding-block: 3rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5rem;
@@ -364,7 +371,7 @@ body {
 }
 
 .bl-cta-mark {
-  opacity: 0.28;
+  opacity: 0.7;
   display: block;
   margin: 0 auto 1.75rem;
 }
@@ -389,6 +396,31 @@ body {
   .bl-emoji {
     display: inline-block;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+  }
+}
+
+// ── Landing footer ────────────────────────────────────────────────────────
+.bl-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.1rem 2rem;
+  background: $bnz-ink;
+  color: rgba(#fff, 0.45);
+  font-size: 0.8rem;
+}
+
+.bl-footer-gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(#fff, 0.45);
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: #fff;
   }
 }
 

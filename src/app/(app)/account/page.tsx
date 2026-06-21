@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { ChangePassword } from "@/components/account/ChangePassword";
+import { BrandKitsManager } from "@/components/account/BrandKitsManager";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function AccountPage() {
             </p>
           </div>
         )}
+        <BrandKitsManager />
       </div>
     </div>
   );

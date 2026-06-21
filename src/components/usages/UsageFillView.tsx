@@ -23,6 +23,7 @@ import { uploadWithDetection } from "@/lib/face/detect-client";
 import type { MediaFile } from "@/lib/media/client";
 import { useGeneration, type GenerationResult } from "@/lib/useGeneration";
 import { slugifyFilename, namedDownloadUrl } from "@/lib/download";
+import { useBrandKit } from "@/components/editor/useBrandKit";
 import styles from "./usages.module.scss";
 
 type OutputFormat = "png" | "jpg";
@@ -51,7 +52,7 @@ interface FieldState {
 }
 
 interface UsageResponse {
-  usage: { id: string; name: string; values: Record<string, UsageValue>; templateId: string };
+  usage: { id: string; name: string; values: Record<string, UsageValue>; templateId: string; brandKitId: string | null };
   template: { id: string; name: string; width: number; height: number; data: unknown };
 }
 
@@ -142,6 +143,8 @@ function fieldsToModifications(
 }
 
 export function UsageFillView({ usageId }: { usageId: string }) {
+  const [brandKitId, setBrandKitId] = useState<string | null>(null);
+  const { palettes } = useBrandKit(brandKitId);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -197,6 +200,7 @@ export function UsageFillView({ usageId }: { usageId: string }) {
         setTemplateMeta(data.template);
         setPlaceholders(ph);
         setName(data.usage.name);
+        setBrandKitId(data.usage.brandKitId ?? null);
         setFields(buildFields(ph, data.usage.values ?? {}));
       } catch (err) {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Something went wrong.");
@@ -456,6 +460,7 @@ export function UsageFillView({ usageId }: { usageId: string }) {
                 );
               }
               if (p.type === "color") {
+                const activePalettes = palettes.filter((pal) => pal.colors.length > 0);
                 return (
                   <Form.Group className="mb-3" controlId={`f-${p.key}`} key={p.key}>
                     <Form.Label className="fw-semibold">{label}</Form.Label>
@@ -474,6 +479,37 @@ export function UsageFillView({ usageId }: { usageId: string }) {
                         style={{ maxWidth: "9rem" }}
                       />
                     </div>
+                    {activePalettes.length > 0 && (
+                      <div className="mt-2 d-flex flex-column gap-1">
+                        {activePalettes.map((pal) => (
+                          <div key={pal.id}>
+                            <div className="text-secondary mb-1" style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              {pal.name}
+                            </div>
+                            <div className="d-flex flex-wrap gap-1">
+                              {pal.colors.map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  title={c}
+                                  aria-label={`Farbe ${c} verwenden`}
+                                  onClick={() => patchField(p.key, { color: c })}
+                                  style={{
+                                    width: "1.5rem",
+                                    height: "1.5rem",
+                                    borderRadius: "0.3rem",
+                                    border: f?.color === c ? "2px solid var(--bs-primary)" : "1px solid var(--bs-border-color)",
+                                    background: c,
+                                    padding: 0,
+                                    cursor: "pointer",
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </Form.Group>
                 );
               }
@@ -651,7 +687,7 @@ export function UsageFillView({ usageId }: { usageId: string }) {
               {downloads.length > 0 && (
                 <>
                   <h3 className="small text-uppercase text-secondary fw-semibold mt-3 mb-2">
-                    Downloads this session
+                    Generated images
                   </h3>
                   <div className={styles.downloads}>
                     {downloads.map((d) => (

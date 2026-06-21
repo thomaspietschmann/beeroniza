@@ -637,8 +637,8 @@ textarea.bnz-input { resize: vertical; }
   border: 1px solid var(--editor-border);
   border-radius: 7px;
   background: transparent;
-  color: #f4b400;
-  font-size: 1rem;
+  color: var(--editor-text-dim);
+  font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -646,7 +646,21 @@ textarea.bnz-input { resize: vertical; }
   border-color: var(--bs-primary, #6c5ce7);
 }
 
-// Saved brand colours, click to apply to the selected layer.
+// Palette group: label + swatch row.
+.bnz-palette-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.bnz-palette-name {
+  font-size: 0.68rem;
+  color: var(--editor-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+// Colour swatches — click to apply to the selected layer.
 .bnz-swatches {
   display: flex;
   flex-wrap: wrap;

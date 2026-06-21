@@ -46,22 +46,27 @@ model User {
   fonts       Font[]
   files       StoredFile[]
   usages      Usage[]
-  brandKit    BrandKit?
+  brandKits   BrandKit[]
 
   @@map("users")
 }
 
-// Per-user brand kit: saved colors and favourite font families, surfaced in the
-// editor's colour and font pickers for quick, consistent reuse.
+// Per-user brand kits: a user can have multiple named kits, each with named
+// colour palettes. Exactly one kit per user is marked isDefault = true.
+// palettes: [{ id, name, colors: string[] }]
 model BrandKit {
   id        String   @id @default(cuid())
-  userId    String   @unique
-  colors    String[] @default([])
+  userId    String
+  name      String   @default("Brand Kit")
+  isDefault Boolean  @default(false)
+  palettes  Json     @default("[]")
   fonts     String[] @default([])
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usages Usage[]
 
+  @@index([userId])
   @@map("brand_kits")
 }
 
@@ -106,11 +111,14 @@ model Usage {
   name       String
   // { [placeholderKey]: { text?: string, fileId?: string, color?: string } }
   values     Json     @default("{}")
+  // Which brand kit's colour palettes to show in the fill-in form.
+  brandKitId String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   template    Template          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  brandKit    BrandKit?         @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
   generations ImageGeneration[]
 
   @@index([templateId])
