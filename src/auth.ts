@@ -5,6 +5,11 @@ import { verifyPassword } from "@/lib/password";
 import { env } from "@/lib/env";
 import { findOrCreateOidcUser } from "@/lib/users";
 
+// A pre-hashed bcrypt hash (cost 12, value "dummy") used to run a constant-
+// time bcrypt.compare when the user account does not exist, preventing a timing
+// side-channel that would distinguish "user not found" from "wrong password".
+const DUMMY_HASH = "$2b$12$InvalidHashUsedOnlyForTimingProtectionXXXXXXXXXX";
+
 // Credentials + JWT sessions. We deliberately avoid the database session
 // strategy and edge middleware so the whole auth path runs in the Node runtime
 // (bcrypt + Prisma are not edge-compatible). Pages are protected with server
@@ -33,12 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
-        // SSO-only accounts have no password hash — deny password login.
-        if (!user.passwordHash) return null;
-
-        const ok = await verifyPassword(password, user.passwordHash);
-        if (!ok) return null;
+        // Always run bcrypt even when the user doesn't exist so that timing
+        // cannot distinguish "user not found" from "wrong password".
+        const hashToCheck = user?.passwordHash ?? DUMMY_HASH;
+        const ok = await verifyPassword(password, hashToCheck);
+        if (!user || !user.passwordHash || !ok) return null;
 
         return {
           id: user.id,

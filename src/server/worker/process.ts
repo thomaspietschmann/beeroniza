@@ -69,6 +69,66 @@ async function preprocessModifications(
   );
 }
 
+// Walk a fabric object tree and inline every image src that would otherwise be
+// fetched by Chromium (SSRF via template body). Mirrors preprocessModifications.
+async function inlineObjectSrc(
+  obj: Record<string, unknown>,
+  ownerUserId: string,
+): Promise<void> {
+  const src = typeof obj.src === "string" ? obj.src : null;
+  if (src) {
+    const isHttp = /^https?:\/\//i.test(src);
+    if (isHttp) {
+      const fileId = localFileId(src);
+      const inlined = fileId
+        ? await inlineLocalFile(fileId, ownerUserId)
+        : await inlineRemoteImage(src);
+      obj.src = inlined ?? ""; // empty string → Fabric skips the image load
+    } else if (!/^data:/i.test(src)) {
+      // Reject file:, blob:, or any other scheme.
+      obj.src = "";
+    }
+  }
+  // Recurse into nested backgroundImage / clipPath objects.
+  for (const key of ["backgroundImage", "clipPath"]) {
+    const child = obj[key];
+    if (child && typeof child === "object" && !Array.isArray(child)) {
+      await inlineObjectSrc(child as Record<string, unknown>, ownerUserId);
+    }
+  }
+  // Walk nested objects arrays (groups, etc.).
+  if (Array.isArray(obj.objects)) {
+    for (const child of obj.objects) {
+      if (child && typeof child === "object" && !Array.isArray(child)) {
+        await inlineObjectSrc(child as Record<string, unknown>, ownerUserId);
+      }
+    }
+  }
+}
+
+// Replace every remote image src in the template's Fabric JSON with a server-
+// side-fetched data: URL (SSRF-guarded). Must run before renderImage so the
+// headless browser never makes outbound requests for template images.
+async function inlineDocImages(
+  doc: { fabric: Record<string, unknown> },
+  ownerUserId: string,
+): Promise<void> {
+  const objects = doc.fabric?.objects;
+  if (Array.isArray(objects)) {
+    await Promise.all(
+      objects.map((o) => {
+        if (o && typeof o === "object" && !Array.isArray(o)) {
+          return inlineObjectSrc(o as Record<string, unknown>, ownerUserId);
+        }
+      }),
+    );
+  }
+  const bg = doc.fabric?.backgroundImage;
+  if (bg && typeof bg === "object" && !Array.isArray(bg)) {
+    await inlineObjectSrc(bg as Record<string, unknown>, ownerUserId);
+  }
+}
+
 // Distinct fontFamily values referenced by a template's layers, used to narrow
 // which of the owner's fonts get inlined into the render.
 function docFontFamilies(doc: { fabric: Record<string, unknown> }): string[] {
@@ -132,6 +192,7 @@ export async function processRenderJob(
     }
 
     const doc = templateDocSchema.parse(rawDoc);
+    await inlineDocImages(doc, gen.userId);
     const modifications = await preprocessModifications(
       modificationsSchema.parse(gen.modifications),
       gen.userId,

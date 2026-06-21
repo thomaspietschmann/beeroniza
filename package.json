@@ -46,6 +46,7 @@
     "react": "^19.2.7",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.7",
+    "undici": "^8.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

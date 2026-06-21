@@ -26,6 +26,9 @@ async function getBrowser(): Promise<Browser> {
 // Concurrency permits (decoupled from the warm-page stack) cap how many renders
 // run at once; the idle stack holds warmed-up, reusable pages.
 const maxConcurrency = Math.max(1, env.workerConcurrency);
+// Hard cap on queued waiters: prevents unbounded in-memory accumulation when all
+// permits are held by hung renders.
+const maxWaiters = maxConcurrency * 8;
 let permits = maxConcurrency;
 const permitWaiters: Array<() => void> = [];
 const idlePages: Page[] = [];
@@ -34,6 +37,9 @@ function takePermit(): Promise<void> {
   if (permits > 0) {
     permits--;
     return Promise.resolve();
+  }
+  if (permitWaiters.length >= maxWaiters) {
+    return Promise.reject(new Error("Render queue full — too many concurrent jobs"));
   }
   return new Promise<void>((resolve) => permitWaiters.push(resolve));
 }
@@ -50,15 +56,39 @@ async function createWarmPage(): Promise<Page> {
     deviceScaleFactor: 1,
     viewport: { width: 1024, height: 1024 },
   });
+
   // Reach the render page on the LOCAL server (same process/container) via an
   // explicit loopback address + the configured PORT. Independent of APP_URL
   // (the public URL, which may point at a proxy), and avoids IPv6 ambiguity.
-  const url = `http://127.0.0.1:${env.port}/internal/render`;
-  // The /internal/* middleware gate only admits requests carrying this shared
-  // secret; setExtraHTTPHeaders applies it to the navigation (and is harmless
-  // on the loopback-only sub-resource requests).
-  await page.setExtraHTTPHeaders({ "x-bnz-internal-render": env.authSecret });
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+  const renderOrigin = `http://127.0.0.1:${env.port}`;
+  const renderUrl = `${renderOrigin}/internal/render`;
+
+  // Egress lock: allow only data: URLs and same-origin requests (the render
+  // page + its /_next/* bundle assets). Abort everything else — after
+  // inlineDocImages all template/mod images are data: URLs, so no legitimate
+  // render needs to reach an external host.
+  //
+  // The /internal/* gate secret is attached only to the top-level document
+  // request, not as a blanket setExtraHTTPHeaders on every sub-resource, so it
+  // cannot be exfiltrated to an attacker's server via a crafted template src.
+  await page.route("**", async (route) => {
+    const req = route.request();
+    const url = req.url();
+    if (url.startsWith("data:")) {
+      return route.continue();
+    }
+    if (url.startsWith(renderOrigin)) {
+      const merged: Record<string, string> = { ...req.headers() };
+      if (req.resourceType() === "document" && url === renderUrl) {
+        merged["x-bnz-internal-render"] = env.authSecret;
+      }
+      return route.continue({ headers: merged });
+    }
+    // Abort all external requests — template images must be pre-inlined.
+    return route.abort();
+  });
+
+  await page.goto(renderUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForFunction(
     () => typeof (window as Window & { __bnzRender?: unknown }).__bnzRender === "function",
     undefined,
@@ -86,31 +116,41 @@ export async function renderImage(input: RenderInput): Promise<Buffer> {
   try {
     page = idlePages.pop() ?? (await createWarmPage());
 
-    const dataUrl = await page.evaluate(
-      async (args) => {
-        const w = window as unknown as {
-          __bnzRender: (
-            doc: unknown,
-            mods: unknown,
-            opts: { format: string; multiplier: number; fontFaceCss?: string },
-          ) => Promise<string>;
-        };
-        const fmt =
-          args.format === "jpg" ? "jpeg" : args.format === "webp" ? "webp" : "png";
-        return w.__bnzRender(args.doc, args.modifications, {
-          format: fmt,
-          multiplier: args.multiplier,
-          fontFaceCss: args.fontFaceCss,
-        });
-      },
-      {
-        doc: input.doc,
-        modifications: input.modifications,
-        format: input.format,
-        multiplier: input.multiplier ?? 1,
-        fontFaceCss: input.fontFaceCss ?? "",
-      },
+    const renderTimeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Render timed out after ${env.renderTimeoutMs} ms`)),
+        env.renderTimeoutMs,
+      ),
     );
+
+    const dataUrl = await Promise.race([
+      page.evaluate(
+        async (args) => {
+          const w = window as unknown as {
+            __bnzRender: (
+              doc: unknown,
+              mods: unknown,
+              opts: { format: string; multiplier: number; fontFaceCss?: string },
+            ) => Promise<string>;
+          };
+          const fmt =
+            args.format === "jpg" ? "jpeg" : args.format === "webp" ? "webp" : "png";
+          return w.__bnzRender(args.doc, args.modifications, {
+            format: fmt,
+            multiplier: args.multiplier,
+            fontFaceCss: args.fontFaceCss,
+          });
+        },
+        {
+          doc: input.doc,
+          modifications: input.modifications,
+          format: input.format,
+          multiplier: input.multiplier ?? 1,
+          fontFaceCss: input.fontFaceCss ?? "",
+        },
+      ),
+      renderTimeout,
+    ]);
 
     const base64 = dataUrl.startsWith("data:") ? dataUrl.split(",")[1] ?? "" : "";
     const buffer = Buffer.from(base64, "base64");

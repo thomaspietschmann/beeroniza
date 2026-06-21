@@ -34,19 +34,59 @@ export const placeholderSchema = z.object({
 });
 export type PlaceholderDef = z.infer<typeof placeholderSchema>;
 
-export const templateDocSchema = z.object({
-  schemaVersion: z.literal(SCHEMA_VERSION),
-  canvas: z.object({
-    width: z.number().int().positive().max(8000),
-    height: z.number().int().positive().max(8000),
-    backgroundColor: z.string().optional(),
-  }),
-  // Raw Fabric.js canvas serialization (canvas.toJSON()). Opaque to the API
-  // layer; only the renderer and editor interpret it.
-  fabric: z.record(z.string(), z.unknown()),
-  // Derived index of fillable layers, kept in sync by the editor.
-  placeholders: z.array(placeholderSchema).default([]),
-});
+const MAX_FABRIC_OBJECTS = 2000;
+const MAX_FABRIC_FONTS = 50;
+const MAX_FABRIC_BYTES = 5 * 1024 * 1024; // 5 MB
+
+export const templateDocSchema = z
+  .object({
+    schemaVersion: z.literal(SCHEMA_VERSION),
+    canvas: z.object({
+      width: z.number().int().positive().max(8000),
+      height: z.number().int().positive().max(8000),
+      backgroundColor: z.string().optional(),
+    }),
+    // Raw Fabric.js canvas serialization (canvas.toJSON()). Opaque to the API
+    // layer; only the renderer and editor interpret it.
+    fabric: z.record(z.string(), z.unknown()),
+    // Derived index of fillable layers, kept in sync by the editor.
+    placeholders: z.array(placeholderSchema).max(500).default([]),
+  })
+  .superRefine((doc, ctx) => {
+    // Bound total serialized size to prevent memory amplification.
+    const bytes = Buffer.byteLength(JSON.stringify(doc.fabric), "utf8");
+    if (bytes > MAX_FABRIC_BYTES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["fabric"],
+        message: `Template document exceeds the ${MAX_FABRIC_BYTES / 1024 / 1024} MB limit`,
+      });
+    }
+    const objects = (doc.fabric as { objects?: unknown })?.objects;
+    if (Array.isArray(objects) && objects.length > MAX_FABRIC_OBJECTS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["fabric", "objects"],
+        message: `Template has too many objects (max ${MAX_FABRIC_OBJECTS})`,
+      });
+    }
+    // Cap distinct font families to prevent render-time memory amplification
+    // (each font is read from storage and base64-inlined into the render CSS).
+    if (Array.isArray(objects)) {
+      const fonts = new Set<string>();
+      for (const o of objects) {
+        const f = (o as { fontFamily?: unknown })?.fontFamily;
+        if (typeof f === "string" && f) fonts.add(f);
+      }
+      if (fonts.size > MAX_FABRIC_FONTS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fabric", "objects"],
+          message: `Template references too many font families (max ${MAX_FABRIC_FONTS})`,
+        });
+      }
+    }
+  });
 export type TemplateDoc = z.infer<typeof templateDocSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -58,7 +98,7 @@ export type TemplateDoc = z.infer<typeof templateDocSchema>;
 
 export const modificationSchema = z.object({
   name: z.string().min(1),
-  text: z.string().optional(),
+  text: z.string().max(10_000).optional(),
   // Either a public http(s) URL or an inline data:image/... URL (so LLM agents
   // can send image bytes directly without a separate upload step).
   image_url: z

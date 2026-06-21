@@ -234,6 +234,18 @@ model StoredFile {
 
 // Fonts available for rendering. Bundled open-source fonts are seeded with
 // userId = null and isBundled = true. Users can upload their own per-instance.
+// Per-key sliding-window rate-limit counters. Used for auth endpoints (login,
+// register, password change). Key format: "login:<ip>", "pw:<userId>", etc.
+// Rows are pruned periodically; windowStart drives the expiry index.
+model RateLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime
+
+  @@index([windowStart])
+  @@map("rate_limits")
+}
+
 model Font {
   id        String   @id @default(cuid())
   userId    String?

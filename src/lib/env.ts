@@ -29,6 +29,8 @@ export const env = {
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
   runWorker: bool(process.env.RUN_WORKER, true),
   workerConcurrency: int(process.env.WORKER_CONCURRENCY, 2),
+  renderTimeoutMs: int(process.env.RENDER_TIMEOUT_MS, 30_000),
+  maxConcurrentGenerations: int(process.env.MAX_CONCURRENT_GENERATIONS, 20),
   storageDriver: (process.env.STORAGE_DRIVER ?? "db") as "db" | "local",
   storageLocalPath: process.env.STORAGE_LOCAL_PATH ?? "/app/storage",
   allowRegistration: bool(process.env.ALLOW_REGISTRATION, true),

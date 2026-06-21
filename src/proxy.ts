@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 
 // Block external access to /internal/* routes (e.g. the render bridge, which
 // would otherwise let anyone drive the headless renderer). The only legitimate
@@ -13,7 +14,13 @@ import { NextRequest, NextResponse } from "next/server";
 export function proxy(req: NextRequest) {
   const secret = process.env.AUTH_SECRET ?? "";
   const provided = req.headers.get("x-bnz-internal-render") ?? "";
-  if (!secret || provided !== secret) {
+  const secretBuf = Buffer.from(secret);
+  const providedBuf = Buffer.from(provided);
+  const match =
+    secret.length > 0 &&
+    secretBuf.length === providedBuf.length &&
+    timingSafeEqual(secretBuf, providedBuf);
+  if (!match) {
     return new NextResponse(null, { status: 404 });
   }
 }

@@ -1,7 +1,15 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { enqueueRender } from "@/server/queue";
+import { env } from "./env";
 import type { Modification, OutputFormat } from "./template/schema";
+
+export class GenerationQuotaError extends Error {
+  constructor() {
+    super("Too many concurrent generations — please wait for running jobs to complete");
+    this.name = "GenerationQuotaError";
+  }
+}
 
 // Creates an ImageGeneration row and enqueues a render job. Shared by the
 // internal UI endpoint and the public REST API.
@@ -17,6 +25,13 @@ export async function createGeneration(opts: {
     where: { id: opts.templateId },
   });
   if (!template) return null;
+
+  const activeCount = await prisma.imageGeneration.count({
+    where: { userId: opts.userId, status: { in: ["QUEUED", "PROCESSING"] } },
+  });
+  if (activeCount >= env.maxConcurrentGenerations) {
+    throw new GenerationQuotaError();
+  }
 
   const generation = await prisma.imageGeneration.create({
     data: {

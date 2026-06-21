@@ -1,4 +1,5 @@
 import { lookup } from "node:dns/promises";
+import { Agent } from "undici";
 
 // Guards server-side fetches of user-supplied URLs (template image_url, webhook
 // targets) against SSRF: only http(s) on standard ports, and the resolved host
@@ -68,6 +69,34 @@ export interface SafeImage {
   bytes: Buffer;
 }
 
+// An undici Agent whose connect.lookup validates the resolved IP at connect time,
+// pinning the address and closing the DNS-rebinding TOCTOU gap: the same IP that
+// passes the check is the IP the socket actually connects to.
+function makeSsrfSafeAgent() {
+  return new Agent({
+    connect: {
+      lookup: (hostname, _opts, callback) => {
+        lookup(hostname, { all: true })
+          .then((results) => {
+            if (results.length === 0) {
+              callback(new Error("Host did not resolve"), "", 4);
+              return;
+            }
+            for (const { address, family } of results) {
+              if (ipBlocked(address, family)) {
+                callback(new Error(`Blocked host address: ${address}`), "", family);
+                return;
+              }
+            }
+            const { address, family } = results[0];
+            callback(null, address, family);
+          })
+          .catch((err: Error) => callback(err, "", 4));
+      },
+    },
+  });
+}
+
 // Fetches a remote image with SSRF protection, a hard size cap, a timeout, and
 // no redirect-following (a redirect could point back at an internal host).
 // Returns null on any failure or policy violation.
@@ -82,6 +111,8 @@ export async function safeFetchImage(
     const res = await fetch(url, {
       redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
+      // @ts-expect-error — Node.js fetch accepts undici dispatcher
+      dispatcher: makeSsrfSafeAgent(),
     });
     if (!res.ok || !res.body) return null;
     const contentType = res.headers.get("content-type") ?? "image/png";
@@ -120,5 +151,7 @@ export async function safePostWebhook(
     body: JSON.stringify(body),
     redirect: "manual",
     signal: AbortSignal.timeout(opts.timeoutMs ?? 10_000),
+    // @ts-expect-error — Node.js fetch accepts undici dispatcher
+    dispatcher: makeSsrfSafeAgent(),
   });
 }
