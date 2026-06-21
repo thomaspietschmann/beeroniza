@@ -51,15 +51,14 @@ model User {
   @@map("users")
 }
 
-// Per-user brand kits: a user can have multiple named kits, each with named
-// colour palettes. Exactly one kit per user is marked isDefault = true.
-// palettes: [{ id, name, colors: string[] }]
+// Instance-wide brand kits. Each kit is a named collection of colours (and
+// optionally fonts). Exactly one kit is marked isDefault = true.
 model BrandKit {
   id        String   @id @default(cuid())
   userId    String
   name      String   @default("Brand Kit")
   isDefault Boolean  @default(false)
-  palettes  Json     @default("[]")
+  colors    String[] @default([])
   fonts     String[] @default([])
   updatedAt DateTime @updatedAt
 

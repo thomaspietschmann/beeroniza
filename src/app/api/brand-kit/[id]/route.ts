@@ -3,26 +3,21 @@ import { prisma } from "@/lib/db";
 import { withUserParams, notFound, badRequest, json } from "@/lib/api-helpers";
 
 const hexColor = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
-const paletteSchema = z.object({
-  id: z.string().min(1).max(64),
-  name: z.string().min(1).max(80),
-  colors: z.array(hexColor).max(48),
-});
 const updateSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   isDefault: z.literal(true).optional(),
-  palettes: z.array(paletteSchema).max(20).optional(),
+  colors: z.array(hexColor).max(48).optional(),
   fonts: z.array(z.string().min(1).max(120)).max(48).optional(),
 });
 
-// Returns the full kit (with palettes + fonts). Instance-wide access.
+// Returns the full kit. Instance-wide access.
 export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
   const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
-  return json({ id: kit.id, name: kit.name, isDefault: kit.isDefault, palettes: kit.palettes, fonts: kit.fonts });
+  return json({ id: kit.id, name: kit.name, isDefault: kit.isDefault, colors: kit.colors, fonts: kit.fonts });
 });
 
-// Updates name, palettes, fonts, or promotes this kit to default.
+// Updates name, colors, fonts, or promotes this kit to default.
 export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
   const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
@@ -41,14 +36,14 @@ export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) =
     data: {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.isDefault ? { isDefault: true } : {}),
-      ...(parsed.data.palettes !== undefined ? { palettes: parsed.data.palettes } : {}),
+      ...(parsed.data.colors !== undefined ? { colors: parsed.data.colors } : {}),
       ...(parsed.data.fonts !== undefined ? { fonts: parsed.data.fonts } : {}),
     },
   });
-  return json({ id: updated.id, name: updated.name, isDefault: updated.isDefault, palettes: updated.palettes, fonts: updated.fonts });
+  return json({ id: updated.id, name: updated.name, isDefault: updated.isDefault, colors: updated.colors, fonts: updated.fonts });
 });
 
-// Deletes the kit. The default kit cannot be deleted if other kits exist.
+// Deletes the kit. Promotes another to default if this was the default.
 export const DELETE = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
   const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
