@@ -11,6 +11,7 @@ import { signOutAction } from "@/app/(app)/actions";
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/templates", label: "Templates" },
+  { href: "/brand-kits", label: "Brand Kits" },
   { href: "/media", label: "Media" },
   { href: "/fonts", label: "Fonts" },
   { href: "/api-keys", label: "API Keys" },

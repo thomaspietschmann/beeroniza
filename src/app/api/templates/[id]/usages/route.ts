@@ -2,12 +2,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { withUserParams, notFound, badRequest, json } from "@/lib/api-helpers";
 
-export const GET = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
+export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
   const template = await prisma.template.findFirst({ where: { id } });
   if (!template) return notFound();
 
   const usages = await prisma.usage.findMany({
-    where: { templateId: id, userId },
+    where: { templateId: id },
     orderBy: { updatedAt: "desc" },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });
@@ -27,9 +27,8 @@ export const POST = withUserParams<{ id: string }>(async (req, userId, { id }) =
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return badRequest("Invalid usage", parsed.error.issues);
 
-  // Verify the brandKit belongs to this user if provided.
   if (parsed.data.brandKitId) {
-    const kit = await prisma.brandKit.findFirst({ where: { id: parsed.data.brandKitId, userId } });
+    const kit = await prisma.brandKit.findUnique({ where: { id: parsed.data.brandKitId } });
     if (!kit) return badRequest("Brand kit not found");
   }
 

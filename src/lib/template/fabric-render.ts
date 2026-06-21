@@ -94,7 +94,10 @@ export function makeClipPath(
 
 export function applyClipToImage(img: fabric.FabricImage, shape: ClipShape) {
   const path = makeClipPath(shape, img.width ?? 0, img.height ?? 0);
-  if (path) img.clipPath = path;
+  // Use set() so Fabric marks the object dirty and invalidates its cache.
+  // Direct `img.clipPath = path` bypasses _set() and the cache is never
+  // invalidated, causing the new clip to be invisible after the first render.
+  if (path) img.set("clipPath", path);
 }
 
 // A normalized focal point (0..1) of the source image — typically a detected

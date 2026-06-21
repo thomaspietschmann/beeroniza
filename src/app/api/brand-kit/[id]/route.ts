@@ -15,25 +15,25 @@ const updateSchema = z.object({
   fonts: z.array(z.string().min(1).max(120)).max(48).optional(),
 });
 
-// Returns the full kit (with palettes + fonts).
-export const GET = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const kit = await prisma.brandKit.findFirst({ where: { id, userId } });
+// Returns the full kit (with palettes + fonts). Instance-wide access.
+export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
+  const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
   return json({ id: kit.id, name: kit.name, isDefault: kit.isDefault, palettes: kit.palettes, fonts: kit.fonts });
 });
 
 // Updates name, palettes, fonts, or promotes this kit to default.
-export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) => {
-  const kit = await prisma.brandKit.findFirst({ where: { id, userId } });
+export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
+  const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
 
   const body = await req.json().catch(() => null);
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return badRequest("Invalid update", parsed.error.issues);
 
-  // Setting isDefault = true: unset all other kits for this user first.
+  // Setting isDefault = true: unset all other kits instance-wide first.
   if (parsed.data.isDefault) {
-    await prisma.brandKit.updateMany({ where: { userId, NOT: { id } }, data: { isDefault: false } });
+    await prisma.brandKit.updateMany({ where: { NOT: { id } }, data: { isDefault: false } });
   }
 
   const updated = await prisma.brandKit.update({
@@ -49,20 +49,19 @@ export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) =>
 });
 
 // Deletes the kit. The default kit cannot be deleted if other kits exist.
-export const DELETE = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const kit = await prisma.brandKit.findFirst({ where: { id, userId } });
+export const DELETE = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
+  const kit = await prisma.brandKit.findUnique({ where: { id } });
   if (!kit) return notFound();
 
   if (kit.isDefault) {
-    const otherCount = await prisma.brandKit.count({ where: { userId, NOT: { id } } });
+    const otherCount = await prisma.brandKit.count({ where: { NOT: { id } } });
     if (otherCount > 0) return badRequest("Cannot delete the default kit — set another kit as default first.");
   }
 
   await prisma.brandKit.delete({ where: { id } });
 
-  // If the user still has kits but none is default, promote the most-recently
-  // updated one (handles edge cases after bulk deletes or manual DB changes).
-  const remaining = await prisma.brandKit.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } });
+  // Promote another kit to default if any remain.
+  const remaining = await prisma.brandKit.findFirst({ orderBy: { updatedAt: "desc" } });
   if (remaining) {
     await prisma.brandKit.update({ where: { id: remaining.id }, data: { isDefault: true } });
   }

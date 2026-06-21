@@ -3,9 +3,9 @@ import { withUser, json } from "@/lib/api-helpers";
 
 // Returns the full default kit for the current user, or an empty shell when
 // the user has no kits yet.
-export const GET = withUser(async (_req, userId) => {
+export const GET = withUser(async () => {
   const kit = await prisma.brandKit.findFirst({
-    where: { userId, isDefault: true },
+    where: { isDefault: true },
   });
   return json(
     kit

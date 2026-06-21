@@ -6,9 +6,9 @@ import { withUserParams, notFound, badRequest, json } from "@/lib/api-helpers";
 
 // Returns the usage plus its template (incl. data) so the fill view can render a
 // live preview against the CURRENT template.
-export const GET = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const usage = await prisma.usage.findFirst({
-    where: { id, userId },
+export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
+  const usage = await prisma.usage.findUnique({
+    where: { id },
     include: { template: true },
   });
   if (!usage) return notFound();
@@ -31,7 +31,7 @@ const updateSchema = z.object({
 });
 
 export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) => {
-  const existing = await prisma.usage.findFirst({ where: { id, userId } });
+  const existing = await prisma.usage.findUnique({ where: { id } });
   if (!existing) return notFound();
 
   const body = await req.json().catch(() => null);
@@ -51,8 +51,8 @@ export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) =>
   return json({ usage });
 });
 
-export const DELETE = withUserParams<{ id: string }>(async (_req, userId, { id }) => {
-  const existing = await prisma.usage.findFirst({ where: { id, userId } });
+export const DELETE = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
+  const existing = await prisma.usage.findUnique({ where: { id } });
   if (!existing) return notFound();
 
   // Best-effort cleanup of uploaded assets this usage referenced.
@@ -60,7 +60,7 @@ export const DELETE = withUserParams<{ id: string }>(async (_req, userId, { id }
   await prisma.usage.delete({ where: { id } });
   if (ids.length) {
     await prisma.storedFile
-      .deleteMany({ where: { id: { in: ids }, userId, kind: "UPLOAD" } })
+      .deleteMany({ where: { id: { in: ids }, userId: existing.userId, kind: "UPLOAD" } })
       .catch(() => undefined);
   }
   return json({ ok: true });

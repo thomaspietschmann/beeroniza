@@ -8,8 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TemplateUsagesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await requireUser();
-  const userId = user.id as string;
+  await requireUser();
 
   const template = await prisma.template.findFirst({
     where: { id },
@@ -19,7 +18,7 @@ export default async function TemplateUsagesPage({ params }: { params: Promise<{
   if (!template) notFound();
 
   const usages = await prisma.usage.findMany({
-    where: { templateId: id, userId },
+    where: { templateId: id },
     orderBy: { updatedAt: "desc" },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });

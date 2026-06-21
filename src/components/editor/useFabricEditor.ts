@@ -785,7 +785,7 @@ export function useFabricEditor(doc: TemplateDoc | null): FabricEditor {
     const obj = canvas?.getActiveObject() as EditorObject | undefined;
     if (!canvas || !obj || !isImage(obj)) return;
     const img = obj as EditorObject & fabric.FabricImage;
-    img.clipPath = undefined;
+    img.set("clipPath", undefined);
     delete img.bnzClip;
     canvas.requestRenderAll();
     bump();
