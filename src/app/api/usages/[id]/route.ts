@@ -28,9 +28,10 @@ export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   values: usageValuesSchema.optional(),
+  brandKitId: z.string().cuid().nullable().optional(),
 });
 
-export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) => {
+export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
   const existing = await prisma.usage.findUnique({ where: { id } });
   if (!existing) return notFound();
 
@@ -45,8 +46,9 @@ export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) =>
       ...(parsed.data.values !== undefined
         ? { values: parsed.data.values as unknown as Prisma.InputJsonValue }
         : {}),
+      ...("brandKitId" in parsed.data ? { brandKitId: parsed.data.brandKitId ?? null } : {}),
     },
-    select: { id: true, name: true, values: true },
+    select: { id: true, name: true, values: true, brandKitId: true },
   });
   return json({ usage });
 });

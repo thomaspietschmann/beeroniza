@@ -24,6 +24,7 @@ import type { MediaFile } from "@/lib/media/client";
 import { useGeneration, type GenerationResult } from "@/lib/useGeneration";
 import { slugifyFilename, namedDownloadUrl } from "@/lib/download";
 import { useBrandKit } from "@/components/editor/useBrandKit";
+import { useBrandKits } from "@/components/editor/useBrandKits";
 import styles from "./usages.module.scss";
 
 type OutputFormat = "png" | "jpg";
@@ -145,6 +146,7 @@ function fieldsToModifications(
 export function UsageFillView({ usageId }: { usageId: string }) {
   const [brandKitId, setBrandKitId] = useState<string | null>(null);
   const { palettes } = useBrandKit(brandKitId);
+  const { kits } = useBrandKits();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -292,6 +294,15 @@ export function UsageFillView({ usageId }: { usageId: string }) {
     patchField(key, { fileId: "", fileUrl: "", faceGravity: false, focalX: null, focalY: null });
   }
 
+  async function handleKitChange(newKitId: string | null) {
+    setBrandKitId(newKitId);
+    await fetch(`/api/usages/${usageId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brandKitId: newKitId }),
+    }).catch(() => undefined);
+  }
+
   const handleSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
@@ -377,19 +388,38 @@ export function UsageFillView({ usageId }: { usageId: string }) {
           ← All usages of {templateMeta.name}
         </Link>
         <div className="d-flex flex-wrap align-items-end justify-content-between gap-2 mt-2">
-          <div className="flex-grow-1" style={{ maxWidth: "32rem" }}>
-            <Form.Label className="small text-secondary mb-1">Usage name</Form.Label>
-            <Form.Control
-              className={styles.nameInput}
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setDirty(true);
-                setSavedAt(null);
-              }}
-              placeholder="Usage name"
-              maxLength={200}
-            />
+          <div className="d-flex flex-wrap gap-2 flex-grow-1">
+            <div style={{ maxWidth: "32rem", flexGrow: 1 }}>
+              <Form.Label className="small text-secondary mb-1">Usage name</Form.Label>
+              <Form.Control
+                className={styles.nameInput}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setDirty(true);
+                  setSavedAt(null);
+                }}
+                placeholder="Usage name"
+                maxLength={200}
+              />
+            </div>
+            {kits.length > 0 && (
+              <div>
+                <Form.Label className="small text-secondary mb-1">Brand Kit</Form.Label>
+                <Form.Select
+                  value={brandKitId ?? ""}
+                  onChange={(e) => handleKitChange(e.target.value || null)}
+                  style={{ minWidth: "10rem" }}
+                >
+                  <option value="">None</option>
+                  {kits.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}{k.isDefault ? " (default)" : ""}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+            )}
           </div>
           <p className="text-secondary mb-1 small">
             Template {templateMeta.width}×{templateMeta.height} ·{" "}

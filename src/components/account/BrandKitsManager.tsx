@@ -6,322 +6,293 @@ import Form from "react-bootstrap/Form";
 import { useBrandKits } from "@/components/editor/useBrandKits";
 import { useBrandKit, type Palette } from "@/components/editor/useBrandKit";
 
-// ── Single kit editor ─────────────────────────────────────────────────────────
+// ── Palette editor (inline, always visible) ───────────────────────────────────
 
-function KitEditor({ kitId }: { kitId: string }) {
-  const { addPalette, removePalette, renamePalette, addColorToPalette, removeColorFromPalette, palettes } =
-    useBrandKit(kitId);
+function PaletteRow({
+  palette,
+  onRename,
+  onRemove,
+  onRemoveColor,
+  onAddColor,
+}: {
+  palette: Palette;
+  onRename: (id: string, name: string) => void;
+  onRemove: (id: string) => void;
+  onRemoveColor: (paletteId: string, color: string) => void;
+  onAddColor: (paletteId: string, color: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(palette.name);
+  const [addingColor, setAddingColor] = useState(false);
+  const [newColor, setNewColor] = useState("#000000");
 
-  const [newPaletteName, setNewPaletteName] = useState("");
-  const [editingPaletteId, setEditingPaletteId] = useState<string | null>(null);
-  const [editingPaletteName, setEditingPaletteName] = useState("");
-  const [addingColor, setAddingColor] = useState<{ paletteId: string; value: string } | null>(null);
-
-  function handleCreatePalette(e: React.FormEvent) {
-    e.preventDefault();
-    const name = newPaletteName.trim();
-    if (!name) return;
-    addPalette(name);
-    setNewPaletteName("");
-  }
-
-  function startRenamePalette(p: Palette) {
-    setEditingPaletteId(p.id);
-    setEditingPaletteName(p.name);
-  }
-
-  function commitRenamePalette(id: string) {
-    const name = editingPaletteName.trim();
-    if (name) renamePalette(id, name);
-    setEditingPaletteId(null);
-  }
-
-  function handleAddColor(e: React.FormEvent) {
-    e.preventDefault();
-    if (!addingColor) return;
-    addColorToPalette(addingColor.paletteId, addingColor.value);
-    setAddingColor(null);
+  function commitRename() {
+    const n = editName.trim();
+    if (n && n !== palette.name) onRename(palette.id, n);
+    setEditing(false);
   }
 
   return (
-    <div className="d-flex flex-column gap-3 mt-3">
-      {palettes.map((p) => (
-        <div key={p.id} className="border rounded p-3">
-          <div className="d-flex align-items-center justify-content-between mb-2">
-            {editingPaletteId === p.id ? (
-              <Form
-                className="d-flex gap-2 flex-grow-1 me-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  commitRenamePalette(p.id);
-                }}
-              >
-                <Form.Control
-                  size="sm"
-                  value={editingPaletteName}
-                  onChange={(e) => setEditingPaletteName(e.target.value)}
-                  autoFocus
-                  onBlur={() => commitRenamePalette(p.id)}
-                  style={{ maxWidth: "16rem" }}
-                />
-              </Form>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-link p-0 text-start fw-semibold text-body text-decoration-none"
-                title="Umbenennen"
-                onClick={() => startRenamePalette(p)}
-              >
-                {p.name}
-              </button>
-            )}
-            <Button
-              variant="link"
+    <div className="mb-3">
+      <div className="d-flex align-items-center gap-2 mb-1">
+        {editing ? (
+          <Form
+            className="d-flex gap-1 flex-grow-1"
+            onSubmit={(e) => { e.preventDefault(); commitRename(); }}
+          >
+            <Form.Control
               size="sm"
-              className="text-danger p-0"
-              onClick={() => removePalette(p.id)}
-            >
-              Löschen
-            </Button>
-          </div>
-
-          <div className="d-flex flex-wrap gap-2 align-items-center">
-            {p.colors.map((c) => (
-              <div key={c} className="position-relative" style={{ width: "2rem", height: "2rem" }}>
-                <div
-                  title={c}
-                  style={{
-                    width: "2rem",
-                    height: "2rem",
-                    borderRadius: "0.35rem",
-                    border: "1px solid var(--bs-border-color)",
-                    background: c,
-                  }}
-                />
-                <button
-                  type="button"
-                  aria-label={`${c} entfernen`}
-                  title={`${c} entfernen`}
-                  onClick={() => removeColorFromPalette(p.id, c)}
-                  style={{
-                    position: "absolute",
-                    top: "-0.4rem",
-                    right: "-0.4rem",
-                    width: "1rem",
-                    height: "1rem",
-                    borderRadius: "50%",
-                    background: "var(--bs-body-bg)",
-                    border: "1px solid var(--bs-border-color)",
-                    fontSize: "0.6rem",
-                    lineHeight: 1,
-                    padding: 0,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-
-            {addingColor?.paletteId === p.id ? (
-              <Form className="d-flex gap-1 align-items-center" onSubmit={handleAddColor}>
-                <input
-                  type="color"
-                  value={addingColor.value}
-                  onChange={(e) => setAddingColor({ paletteId: p.id, value: e.target.value })}
-                  style={{
-                    width: "2rem",
-                    height: "2rem",
-                    padding: 0,
-                    border: "1px solid var(--bs-border-color)",
-                    borderRadius: "0.35rem",
-                    cursor: "pointer",
-                  }}
-                />
-                <Button type="submit" size="sm" variant="primary">
-                  Hinzufügen
-                </Button>
-                <Button size="sm" variant="link" className="p-0 text-secondary" onClick={() => setAddingColor(null)}>
-                  Abbrechen
-                </Button>
-              </Form>
-            ) : (
-              <button
-                type="button"
-                title="Farbe hinzufügen"
-                onClick={() => setAddingColor({ paletteId: p.id, value: "#000000" })}
-                style={{
-                  width: "2rem",
-                  height: "2rem",
-                  borderRadius: "0.35rem",
-                  border: "1px dashed var(--bs-border-color)",
-                  background: "transparent",
-                  fontSize: "1.2rem",
-                  lineHeight: 1,
-                  cursor: "pointer",
-                  color: "var(--bs-secondary)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                +
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
-
-      <Form className="d-flex gap-2" onSubmit={handleCreatePalette}>
-        <Form.Control
-          placeholder="Neue Palette …"
-          value={newPaletteName}
-          onChange={(e) => setNewPaletteName(e.target.value)}
-          style={{ maxWidth: "16rem" }}
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              autoFocus
+              onBlur={commitRename}
+              style={{ maxWidth: "14rem" }}
+            />
+          </Form>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-link p-0 text-secondary text-decoration-none"
+            style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}
+            title="Rename palette"
+            onClick={() => { setEditing(true); setEditName(palette.name); }}
+          >
+            {palette.name}
+          </button>
+        )}
+        <Button
+          variant="link"
           size="sm"
+          className="p-0 text-danger ms-auto"
+          style={{ fontSize: "0.75rem" }}
+          onClick={() => onRemove(palette.id)}
+        >
+          Remove palette
+        </Button>
+      </div>
+
+      <div className="d-flex flex-wrap gap-2 align-items-center">
+        {palette.colors.map((c) => (
+          <div key={c} className="position-relative" style={{ width: "2rem", height: "2rem" }}>
+            <div
+              title={c}
+              style={{ width: "2rem", height: "2rem", borderRadius: "0.35rem", border: "1px solid var(--bs-border-color)", background: c }}
+            />
+            <button
+              type="button"
+              aria-label={`Remove ${c}`}
+              onClick={() => onRemoveColor(palette.id, c)}
+              style={{
+                position: "absolute", top: "-0.35rem", right: "-0.35rem",
+                width: "0.95rem", height: "0.95rem", borderRadius: "50%",
+                background: "var(--bs-body-bg)", border: "1px solid var(--bs-border-color)",
+                fontSize: "0.55rem", lineHeight: 1, padding: 0, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >×</button>
+          </div>
+        ))}
+
+        {addingColor ? (
+          <Form
+            className="d-flex gap-1 align-items-center"
+            onSubmit={(e) => { e.preventDefault(); onAddColor(palette.id, newColor); setAddingColor(false); }}
+          >
+            <input
+              type="color"
+              value={newColor}
+              onChange={(e) => setNewColor(e.target.value)}
+              style={{ width: "2rem", height: "2rem", padding: 0, border: "1px solid var(--bs-border-color)", borderRadius: "0.35rem", cursor: "pointer" }}
+            />
+            <Button type="submit" size="sm" variant="primary">Add</Button>
+            <Button size="sm" variant="link" className="p-0 text-secondary" onClick={() => setAddingColor(false)}>Cancel</Button>
+          </Form>
+        ) : (
+          <button
+            type="button"
+            title="Add color"
+            onClick={() => setAddingColor(true)}
+            style={{
+              width: "2rem", height: "2rem", borderRadius: "0.35rem",
+              border: "1px dashed var(--bs-border-color)", background: "transparent",
+              fontSize: "1.1rem", cursor: "pointer", color: "var(--bs-secondary)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >+</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Per-kit editor ────────────────────────────────────────────────────────────
+
+function KitCard({
+  kitId,
+  kitName,
+  isDefault,
+  onSetDefault,
+  onRename,
+  onDelete,
+}: {
+  kitId: string;
+  kitName: string;
+  isDefault: boolean;
+  onSetDefault: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
+  const { palettes, addPalette, removePalette, renamePalette, addColorToPalette, removeColorFromPalette } =
+    useBrandKit(kitId);
+  const [editingName, setEditingName] = useState(false);
+  const [nameVal, setNameVal] = useState(kitName);
+  const [newPalette, setNewPalette] = useState("");
+
+  function commitName() {
+    const n = nameVal.trim();
+    if (n && n !== kitName) onRename(n);
+    setEditingName(false);
+  }
+
+  function handleAddPalette(e: React.FormEvent) {
+    e.preventDefault();
+    const n = newPalette.trim();
+    if (!n) return;
+    addPalette(n);
+    setNewPalette("");
+  }
+
+  return (
+    <div className="border rounded p-3">
+      {/* Kit header */}
+      <div className="d-flex align-items-center gap-2 mb-3">
+        {editingName ? (
+          <Form
+            className="flex-grow-1"
+            onSubmit={(e) => { e.preventDefault(); commitName(); }}
+          >
+            <Form.Control
+              size="sm"
+              value={nameVal}
+              onChange={(e) => setNameVal(e.target.value)}
+              autoFocus
+              onBlur={commitName}
+              style={{ maxWidth: "18rem" }}
+            />
+          </Form>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-link p-0 text-start fw-semibold text-body text-decoration-none flex-grow-1"
+            title="Rename kit"
+            onClick={() => { setEditingName(true); setNameVal(kitName); }}
+          >
+            {kitName}
+            {isDefault && (
+              <span className="badge bg-primary ms-2" style={{ fontSize: "0.65rem", verticalAlign: "middle" }}>
+                Default
+              </span>
+            )}
+          </button>
+        )}
+        <div className="d-flex gap-2 flex-shrink-0">
+          {!isDefault && (
+            <Button variant="link" size="sm" className="p-0 text-secondary" onClick={onSetDefault}>
+              Set as default
+            </Button>
+          )}
+          <Button variant="link" size="sm" className="p-0 text-danger" onClick={onDelete}>
+            Delete kit
+          </Button>
+        </div>
+      </div>
+
+      {/* Palettes */}
+      {palettes.length === 0 ? (
+        <p className="text-secondary small mb-2">No palettes yet — add one below.</p>
+      ) : (
+        palettes.map((p) => (
+          <PaletteRow
+            key={p.id}
+            palette={p}
+            onRename={renamePalette}
+            onRemove={removePalette}
+            onRemoveColor={removeColorFromPalette}
+            onAddColor={addColorToPalette}
+          />
+        ))
+      )}
+
+      {/* Add palette */}
+      <Form className="d-flex gap-2 mt-2" onSubmit={handleAddPalette}>
+        <Form.Control
+          placeholder="New palette name…"
+          value={newPalette}
+          onChange={(e) => setNewPalette(e.target.value)}
+          size="sm"
+          style={{ maxWidth: "14rem" }}
         />
-        <Button type="submit" variant="outline-secondary" size="sm" disabled={!newPaletteName.trim()}>
-          Palette anlegen
+        <Button type="submit" variant="outline-secondary" size="sm" disabled={!newPalette.trim()}>
+          Add palette
         </Button>
       </Form>
     </div>
   );
 }
 
-// ── Brand kit list + management ────────────────────────────────────────────────
+// ── Root component ────────────────────────────────────────────────────────────
 
 export function BrandKitsManager() {
   const { kits, createKit, deleteKit, setDefault, renameKit } = useBrandKits();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newKitName, setNewKitName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleCreateKit(e: React.FormEvent) {
     e.preventDefault();
     const name = newKitName.trim();
     if (!name) return;
-    const kit = await createKit(name);
+    await createKit(name);
     setNewKitName("");
-    setExpandedId(kit.id);
   }
 
   async function handleDelete(id: string) {
     setDeleteError(null);
     try {
       await deleteKit(id);
-      if (expandedId === id) setExpandedId(null);
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
+      setDeleteError(err instanceof Error ? err.message : "Delete failed");
     }
   }
 
-  function startRenameKit(id: string, name: string) {
-    setEditingId(id);
-    setEditingName(name);
-  }
-
-  async function commitRenameKit(id: string) {
-    const name = editingName.trim();
-    if (name) await renameKit(id, name);
-    setEditingId(null);
-  }
-
   return (
-    <div className="bnz-card p-3 p-lg-4">
-      <h2 className="h5 mb-1">Brand Kits</h2>
-      <p className="text-secondary mb-3" style={{ fontSize: "0.875rem" }}>
-        Jedes Kit enthält Farbpaletten, die im Editor und beim Ausfüllen von Usages erscheinen.
-        Das Standard-Kit wird beim Erstellen einer neuen Usage vorausgewählt.
-      </p>
-
+    <div>
       {deleteError && (
         <div className="alert alert-danger py-2 small mb-3">{deleteError}</div>
       )}
 
-      <div className="d-flex flex-column gap-2">
+      <div className="d-flex flex-column gap-3">
         {kits.map((k) => (
-          <div key={k.id} className="border rounded">
-            <div className="d-flex align-items-center gap-2 p-3">
-              {editingId === k.id ? (
-                <Form
-                  className="flex-grow-1"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    commitRenameKit(k.id);
-                  }}
-                >
-                  <Form.Control
-                    size="sm"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    autoFocus
-                    onBlur={() => commitRenameKit(k.id)}
-                    style={{ maxWidth: "16rem" }}
-                  />
-                </Form>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-link p-0 text-start fw-semibold text-body text-decoration-none flex-grow-1"
-                  onClick={() => setExpandedId(expandedId === k.id ? null : k.id)}
-                >
-                  {k.name}
-                  {k.isDefault && (
-                    <span className="badge bg-primary ms-2" style={{ fontSize: "0.65rem", verticalAlign: "middle" }}>
-                      Standard
-                    </span>
-                  )}
-                </button>
-              )}
-
-              <div className="d-flex gap-2 flex-shrink-0">
-                {!k.isDefault && (
-                  <Button variant="link" size="sm" className="p-0 text-secondary" onClick={() => setDefault(k.id)}>
-                    Als Standard
-                  </Button>
-                )}
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 text-secondary"
-                  onClick={() => startRenameKit(k.id, k.name)}
-                >
-                  Umbenennen
-                </Button>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 text-danger"
-                  onClick={() => handleDelete(k.id)}
-                >
-                  Löschen
-                </Button>
-              </div>
-            </div>
-
-            {expandedId === k.id && (
-              <div className="border-top px-3 pb-3">
-                <KitEditor kitId={k.id} />
-              </div>
-            )}
-          </div>
+          <KitCard
+            key={k.id}
+            kitId={k.id}
+            kitName={k.name}
+            isDefault={k.isDefault}
+            onSetDefault={() => setDefault(k.id)}
+            onRename={(name) => renameKit(k.id, name)}
+            onDelete={() => handleDelete(k.id)}
+          />
         ))}
       </div>
 
-      <Form className="d-flex gap-2 mt-3" onSubmit={handleCreateKit}>
+      <Form className="d-flex gap-2 mt-4" onSubmit={handleCreateKit}>
         <Form.Control
-          placeholder="Neues Brand Kit …"
+          placeholder="New brand kit…"
           value={newKitName}
           onChange={(e) => setNewKitName(e.target.value)}
-          style={{ maxWidth: "16rem" }}
+          style={{ maxWidth: "18rem" }}
         />
         <Button type="submit" variant="outline-primary" disabled={!newKitName.trim()}>
-          Anlegen
+          Create kit
         </Button>
       </Form>
     </div>

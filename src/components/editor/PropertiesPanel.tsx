@@ -16,6 +16,7 @@ import {
 } from "./types";
 import type { ClipShape, PlaceholderType } from "@/lib/template/schema";
 import { useBrandKit } from "./useBrandKit";
+import { useBrandKits } from "./useBrandKits";
 
 const WEIGHTS = [
   { value: "300", label: "Light" },
@@ -585,9 +586,15 @@ function Field({
 
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const normalized = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value) ? value : "#000000";
-  const { palettes, addColor, removeColor } = useBrandKit();
-  const inAnyPalette = palettes.some((p) => p.colors.includes(normalized));
-  const hasPaletteColors = palettes.some((p) => p.colors.length > 0);
+  // Default kit: used for the +/− save action.
+  const { kit: defaultKit, addColor, removeColor } = useBrandKit();
+  // All kits: shown as grouped swatches so all brand colours are reachable.
+  const { kits } = useBrandKits();
+
+  const inDefaultKit = defaultKit.palettes.some((p) => p.colors.includes(normalized));
+  const kitLabel = defaultKit.name ? `"${defaultKit.name}"` : "default brand kit";
+  const hasAnyColor = kits.length > 0; // swatches section shown as soon as kits exist
+
   return (
     <div className="bnz-color">
       <div className="bnz-color-row">
@@ -595,34 +602,59 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
         <button
           type="button"
           className="bnz-swatch-save"
-          aria-label={inAnyPalette ? "Aus Palette entfernen" : "Zu Palette hinzufügen"}
-          title={inAnyPalette ? "Aus Palette entfernen" : "Zu Palette hinzufügen"}
-          onClick={() => (inAnyPalette ? removeColor(normalized) : addColor(normalized))}
+          aria-label={inDefaultKit ? `Remove from brand kit ${kitLabel}` : `Save to brand kit ${kitLabel}`}
+          title={inDefaultKit ? `Remove from brand kit ${kitLabel}` : `Save to brand kit ${kitLabel}`}
+          onClick={() => (inDefaultKit ? removeColor(normalized) : addColor(normalized))}
         >
-          {inAnyPalette ? "−" : "+"}
+          {inDefaultKit ? "−" : "+"}
         </button>
       </div>
-      {hasPaletteColors &&
-        palettes
-          .filter((p) => p.colors.length > 0)
-          .map((palette) => (
-            <div key={palette.id} className="bnz-palette-group">
-              <span className="bnz-palette-name">{palette.name}</span>
-              <div className="bnz-swatches" role="group" aria-label={palette.name}>
-                {palette.colors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className="bnz-swatch"
-                    style={{ background: c }}
-                    title={c}
-                    aria-label={`Farbe ${c} verwenden`}
-                    onClick={() => onChange(c)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+      {hasAnyColor &&
+        kits.map((k) => {
+          // Load each kit's palettes inline via the per-kit hook.
+          return <KitSwatches key={k.id} kitId={k.id} kitName={k.name} isDefault={k.isDefault} onPick={onChange} />;
+        })}
+    </div>
+  );
+}
+
+function KitSwatches({
+  kitId,
+  kitName,
+  isDefault,
+  onPick,
+}: {
+  kitId: string;
+  kitName: string;
+  isDefault: boolean;
+  onPick: (c: string) => void;
+}) {
+  const { palettes } = useBrandKit(kitId);
+  const activePalettes = palettes.filter((p) => p.colors.length > 0);
+  if (activePalettes.length === 0) return null;
+  return (
+    <div className="bnz-palette-group">
+      <span className="bnz-palette-name">{kitName}{isDefault ? " ·  default" : ""}</span>
+      {activePalettes.map((palette) => (
+        <div key={palette.id}>
+          {activePalettes.length > 1 && (
+            <span className="bnz-palette-name" style={{ opacity: 0.6, fontSize: "0.62rem" }}>{palette.name}</span>
+          )}
+          <div className="bnz-swatches" role="group" aria-label={`${kitName} – ${palette.name}`}>
+            {palette.colors.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className="bnz-swatch"
+                style={{ background: c }}
+                title={c}
+                aria-label={`Use ${c}`}
+                onClick={() => onPick(c)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

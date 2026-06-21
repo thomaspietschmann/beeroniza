@@ -10,7 +10,7 @@ export default async function BrandKitsPage() {
       <div className="mb-4">
         <h1 className="h3 mb-1">Brand Kits</h1>
         <p className="text-secondary mb-0">
-          Farbpaletten für den Editor und Usage-Formulare. Kits sind instanzweit geteilt.
+          Colour palettes for the editor and usage forms. Kits are shared across all users.
         </p>
       </div>
       <BrandKitsManager />

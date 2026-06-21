@@ -84,7 +84,7 @@ export function useBrandKit(kitId?: string | null) {
       if (cur.palettes.some((p) => p.colors.includes(c))) return;
       let newPalettes: Palette[];
       if (cur.palettes.length === 0) {
-        newPalettes = [{ id: newId(), name: "Meine Farben", colors: [c] }];
+        newPalettes = [{ id: newId(), name: "My Colors", colors: [c] }];
       } else {
         const [first, ...rest] = cur.palettes;
         newPalettes = [{ ...first, colors: [c, ...first.colors].slice(0, 48) }, ...rest];
