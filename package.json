@@ -1,6 +1,6 @@
 {
   "name": "beeroniza",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "private": true,
   "description": "Source-available, self-hosted image generation from visual templates — with a web editor and a REST API.",
   "license": "SEE LICENSE IN LICENSE",
