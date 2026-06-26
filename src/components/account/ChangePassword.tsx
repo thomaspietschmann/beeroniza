@@ -46,16 +46,16 @@ export function ChangePassword() {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">Password changed successfully.</Alert>}
       <Form onSubmit={submit} style={{ maxWidth: 400 }}>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="cp-current">
           <Form.Label>Current password</Form.Label>
           <Form.Control type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoComplete="current-password" />
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="cp-new">
           <Form.Label>New password</Form.Label>
           <Form.Control type="password" value={next} onChange={(e) => setNext(e.target.value)} minLength={8} required autoComplete="new-password" />
           <Form.Text className="text-secondary">At least 8 characters.</Form.Text>
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="cp-confirm">
           <Form.Label>Confirm new password</Form.Label>
           <Form.Control type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
         </Form.Group>

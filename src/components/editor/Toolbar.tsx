@@ -165,13 +165,44 @@ function ToolMenu({
     });
   }
 
+  // Move focus into the menu when it opens so keyboard users can navigate it.
+  useEffect(() => {
+    if (!open) return;
+    ref.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+  }, [open]);
+
+  // Arrow-key navigation between menu items (WCAG 2.1.1 keyboard support).
+  function onMenuKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const items = Array.from(
+      ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
+    );
+    if (!items.length) return;
+    const idx = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      items[(idx + 1) % items.length].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      items[(idx - 1 + items.length) % items.length].focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      items[0].focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      items[items.length - 1].focus();
+    }
+  }
+
   useEffect(() => {
     if (!open) return;
     function onDocPointer(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        btnRef.current?.focus();
+      }
     }
     function onReflow() {
       setOpen(false);
@@ -195,6 +226,12 @@ function ToolMenu({
         type="button"
         className={`bnz-tool${open ? " is-open" : ""}`}
         onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" && !open) {
+            e.preventDefault();
+            toggle();
+          }
+        }}
         title={label}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -213,6 +250,7 @@ function ToolMenu({
           role="menu"
           style={{ top: pos.top, left: pos.left }}
           onClick={() => setOpen(false)}
+          onKeyDown={onMenuKeyDown}
         >
           {children}
         </div>

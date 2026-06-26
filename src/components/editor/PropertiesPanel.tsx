@@ -9,7 +9,6 @@ import {
   isText,
   objectKind,
   type EditorObject,
-  type FontInfo,
   type ImageAlign,
   type ImageFit,
   type TextFit,
@@ -17,6 +16,7 @@ import {
 import type { ClipShape, PlaceholderType } from "@/lib/template/schema";
 import { useBrandKit } from "./useBrandKit";
 import { useBrandKits } from "./useBrandKits";
+import { useFonts } from "./useFonts";
 
 const WEIGHTS = [
   { value: "300", label: "Light" },
@@ -105,22 +105,9 @@ export function PropertiesPanel({ editor }: { editor: FabricEditor }) {
 // ── Text ──────────────────────────────────────────────────────────────────
 function TextProps({ editor, obj }: { editor: FabricEditor; obj: EditorObject }) {
   const t = obj as unknown as fabric.Textbox;
-  const [fonts, setFonts] = useState<FontInfo[]>([]);
+  const fonts = useFonts();
   const { fonts: brandFonts, toggleFont } = useBrandKit();
   const currentFont = t.fontFamily ?? "Inter";
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/fonts")
-      .then((r) => r.json())
-      .then((d: { fonts: FontInfo[] }) => {
-        if (!cancelled) setFonts((d.fonts ?? []).slice().sort((a, b) => a.family.localeCompare(b.family)));
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <div className="bnz-props-group">

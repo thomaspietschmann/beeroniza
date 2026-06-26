@@ -1,10 +1,17 @@
+
 # Beeroniza — Development Guide
 
 Self-hosted image generation from visual templates, with a web editor and a REST
 API. Open source. **Generated with AI; no warranty — use at your own risk.**
 
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
 ## Stack
 - **Next.js 16** (App Router) + **TypeScript** + **React 19**
+  - LLM-readable Next.js docs: <https://nextjs.org/docs/llms.txt> — fetch this
+    instead of guessing App Router / Next 16 APIs.
 - **PostgreSQL** via **Prisma 7** (driver adapter `@prisma/adapter-pg`) — the ONLY
   hard dependency. Postgres also holds the job queue (**pg-boss**) and, by
   default, stored files (`StoredFile.data` bytea).
@@ -34,6 +41,13 @@ API. Open source. **Generated with AI; no warranty — use at your own risk.**
 - Dev server runs on port **3939** in this workspace; the host already has a
   Postgres on 5432 (db `beeroniza`, user/pw `postgres`). Dev admin user:
   `admin@example.org` / `123456` (created by the seed).
+- **UI testing = `agent-browser`** (the `agent-browser` skill / CLI). For any
+  browser-driven work — manual testing flows, UI verification, screenshots,
+  dogfooding, QA — use `agent-browser` against the dev server on `:3939`. Do
+  **not** use the Playwright MCP (`mcp__playwright__*`) or the `playwright-browser`
+  subagent; `agent-browser` is far more token-efficient. (Requires the CLI
+  locally: `npm i -g agent-browser && agent-browser install` — not bundled with
+  the repo, so contributors without it can fall back to Playwright.)
 
 ## Core model
 - **Template** = a Fabric canvas JSON (`Template.data`, a `TemplateDoc`, see

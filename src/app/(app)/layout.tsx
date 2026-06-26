@@ -16,7 +16,7 @@ export default async function AppLayout({
           Bundled fonts come from the build-time _fonts.scss. */}
       <link rel="stylesheet" href="/api/fonts/css" />
       <AppNavbar email={user.email} isAdmin={admin} />
-      <Container fluid="lg" className="py-4 py-lg-5">
+      <Container as="main" fluid="lg" className="py-4 py-lg-5">
         {children}
       </Container>
     </>

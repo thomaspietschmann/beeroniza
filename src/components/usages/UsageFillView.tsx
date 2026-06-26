@@ -10,6 +10,7 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Spinner from "react-bootstrap/Spinner";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { LiveStatus } from "@/components/LiveStatus";
 import {
   templateDocSchema,
   placeholdersOf,
@@ -378,8 +379,19 @@ export function UsageFillView({ usageId }: { usageId: string }) {
     );
   }
 
+  const liveStatus = generating
+    ? "Generating image…"
+    : rendering
+      ? "Rendering preview…"
+      : current?.status === "completed"
+        ? "Image ready."
+        : current?.status === "failed"
+          ? "Generation failed."
+          : "";
+
   return (
     <div>
+      <LiveStatus message={liveStatus} />
       <div className="mb-4">
         <Link
           href={`/templates/${templateMeta.id}`}

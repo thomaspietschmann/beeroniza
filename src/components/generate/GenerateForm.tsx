@@ -10,6 +10,7 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Spinner from "react-bootstrap/Spinner";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { LiveStatus } from "@/components/LiveStatus";
 import type { PlaceholderDef } from "@/lib/template/schema";
 import { uploadWithDetection } from "@/lib/face/detect-client";
 import { useGeneration } from "@/lib/useGeneration";
@@ -130,8 +131,17 @@ export function GenerateForm({
 
   const isPending = result != null && result.status !== "completed" && result.status !== "failed";
 
+  const liveStatus = gen.generating
+    ? "Generating image…"
+    : result?.status === "completed"
+      ? "Image generated."
+      : result?.status === "failed"
+        ? "Image generation failed."
+        : "";
+
   return (
     <Row className="g-4">
+      <LiveStatus message={liveStatus} />
       <Col xs={12} lg={6}>
         <div className="bnz-card p-3 p-lg-4">
           <Form onSubmit={handleSubmit}>
@@ -179,6 +189,7 @@ export function GenerateForm({
                         value={f?.value || "#000000"}
                         onChange={(e) => updateField(p.key, { value: e.target.value })}
                         title={label}
+                        aria-label={`${label} (colour)`}
                         style={{ width: "3rem" }}
                       />
                       <Form.Control

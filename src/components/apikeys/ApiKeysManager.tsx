@@ -202,7 +202,11 @@ export function ApiKeysManager({ keys }: { keys: ApiKeyItem[] }) {
         <div className="mb-4">
           <PlaintextCallout plaintext={plaintext} onCopy={copyPlaintext} />
           <div className="mt-2 d-flex align-items-center gap-2">
-            {copied && <span className="small text-success fw-semibold">Copied to clipboard.</span>}
+            {copied && (
+              <span role="status" aria-live="polite" className="small text-success fw-semibold">
+                Copied to clipboard.
+              </span>
+            )}
             <Button size="sm" variant="link" className="ms-auto" onClick={() => setPlaintext(null)}>
               Dismiss
             </Button>

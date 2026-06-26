@@ -8,23 +8,33 @@ const CUSTOM = "__custom__";
 
 export function CanvasSizeControl({ editor }: { editor: FabricEditor }) {
   const { width, height } = editor.canvasSize;
-  const matched = SIZE_PRESETS.find((p) => p.width === width && p.height === height);
-  const [presetId, setPresetId] = useState<string>(matched?.id ?? CUSTOM);
-  const [w, setW] = useState(width);
-  const [h, setH] = useState(height);
+  // Draft values for the editable W/H inputs. They re-sync to the editor's
+  // canvas size whenever it changes from elsewhere (undo/redo, programmatic
+  // resize) via the adjust-state-during-render pattern below, so the control
+  // never shows a stale size. See https://react.dev/learn/you-might-not-need-an-effect
+  const [draftW, setDraftW] = useState(width);
+  const [draftH, setDraftH] = useState(height);
+  const [lastSize, setLastSize] = useState({ width, height });
+  if (lastSize.width !== width || lastSize.height !== height) {
+    setLastSize({ width, height });
+    setDraftW(width);
+    setDraftH(height);
+  }
+
+  const presetId =
+    SIZE_PRESETS.find((p) => p.width === draftW && p.height === draftH)?.id ?? CUSTOM;
 
   function onPreset(id: string) {
-    setPresetId(id);
     const p = presetById(id);
     if (p) {
-      setW(p.width);
-      setH(p.height);
+      setDraftW(p.width);
+      setDraftH(p.height);
       editor.setCanvasSize(p.width, p.height);
     }
   }
 
   function applyCustom() {
-    if (w > 0 && h > 0) editor.setCanvasSize(Math.round(w), Math.round(h));
+    if (draftW > 0 && draftH > 0) editor.setCanvasSize(Math.round(draftW), Math.round(draftH));
   }
 
   return (
@@ -50,12 +60,9 @@ export function CanvasSizeControl({ editor }: { editor: FabricEditor }) {
         type="number"
         min={1}
         max={8000}
-        value={w}
+        value={draftW}
         aria-label="Width"
-        onChange={(e) => {
-          setPresetId(CUSTOM);
-          setW(Number(e.target.value));
-        }}
+        onChange={(e) => setDraftW(Number(e.target.value))}
         onBlur={applyCustom}
       />
       <span className="bnz-size-x" aria-hidden>
@@ -66,12 +73,9 @@ export function CanvasSizeControl({ editor }: { editor: FabricEditor }) {
         type="number"
         min={1}
         max={8000}
-        value={h}
+        value={draftH}
         aria-label="Height"
-        onChange={(e) => {
-          setPresetId(CUSTOM);
-          setH(Number(e.target.value));
-        }}
+        onChange={(e) => setDraftH(Number(e.target.value))}
         onBlur={applyCustom}
       />
     </div>
