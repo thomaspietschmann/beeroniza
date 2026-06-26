@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { templateDocSchema } from "@/lib/template/schema";
 import { withUserParams, notFound, badRequest, json } from "@/lib/api-helpers";
+import { lockBlockingWrite } from "@/lib/template-lock-server";
 
 export const GET = withUserParams<{ id: string }>(async (_req, _userId, { id }) => {
   const template = await prisma.template.findFirst({
@@ -20,7 +21,7 @@ const updateSchema = z.object({
   expectedUpdatedAt: z.string().datetime().optional(),
 });
 
-export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) => {
+export const PUT = withUserParams<{ id: string }>(async (req, userId, { id }) => {
   const existing = await prisma.template.findFirst({ where: { id } });
   if (!existing) return notFound();
 
@@ -35,6 +36,10 @@ export const PUT = withUserParams<{ id: string }>(async (req, _userId, { id }) =
     ...(height !== undefined ? { height } : {}),
     ...(data !== undefined ? { data: data as object } : {}),
   };
+
+  // Soft-lock guard: reject the write if another user currently holds the lock.
+  const blocking = await lockBlockingWrite(id, userId);
+  if (blocking) return json({ error: "locked", lock: blocking }, 409);
 
   if (expectedUpdatedAt !== undefined) {
     const result = await prisma.template.updateMany({

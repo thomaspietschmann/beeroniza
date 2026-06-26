@@ -177,6 +177,7 @@ export function NewTemplateModal({ show, onHide }: { show: boolean; onHide: () =
                   value={bg}
                   onChange={(e) => setBg(e.target.value)}
                   title="Background color"
+                  aria-label="Background color"
                   style={{ width: "3rem" }}
                 />
                 <Form.Control

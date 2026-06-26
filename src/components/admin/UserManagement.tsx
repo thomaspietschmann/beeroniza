@@ -69,7 +69,7 @@ function SetPasswordModal({
           ) : (
             <>
               {error && <Alert variant="danger">{error}</Alert>}
-              <Form.Group>
+              <Form.Group controlId="um-set-password">
                 <Form.Label>New password</Form.Label>
                 <Form.Control
                   type="password"
@@ -128,20 +128,20 @@ function CreateUserModal({ onCreated, onClose }: { onCreated: (u: UserRow) => vo
       <Form onSubmit={submit}>
         <Modal.Body className="d-flex flex-column gap-3">
           {error && <Alert variant="danger">{error}</Alert>}
-          <Form.Group>
+          <Form.Group controlId="um-create-email">
             <Form.Label>Email</Form.Label>
             <Form.Control type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
           </Form.Group>
-          <Form.Group>
+          <Form.Group controlId="um-create-name">
             <Form.Label>Name <span className="text-secondary">(optional)</span></Form.Label>
             <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} />
           </Form.Group>
-          <Form.Group>
+          <Form.Group controlId="um-create-password">
             <Form.Label>Password</Form.Label>
             <Form.Control type="password" value={pw} onChange={(e) => setPw(e.target.value)} minLength={8} required />
             <Form.Text className="text-secondary">At least 8 characters.</Form.Text>
           </Form.Group>
-          <Form.Group>
+          <Form.Group controlId="um-create-role">
             <Form.Label>Role</Form.Label>
             <Form.Select value={role} onChange={(e) => setRole(e.target.value as "USER" | "ADMIN")}>
               <option value="USER">User</option>

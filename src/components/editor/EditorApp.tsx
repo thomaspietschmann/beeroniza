@@ -47,6 +47,10 @@ export function EditorApp({ id }: { id: string }) {
   const [lockInfo, setLockInfo] = useState<LockInfo | null>(null);
   const [showTakeoverModal, setShowTakeoverModal] = useState(false);
   const [showConflictModal, setShowConflictModal] = useState(false);
+  // Set when heartbeats repeatedly fail to reach the server: we may no longer
+  // hold the lock, so the user is warned their edits could conflict.
+  const [connectionLost, setConnectionLost] = useState(false);
+  const heartbeatFailures = useRef(0);
   const baseUpdatedAt = useRef<string | null>(null);
 
   // Floating panel visibility (Layers / Template inputs). Off-canvas chrome so
@@ -124,16 +128,29 @@ export function EditorApp({ id }: { id: string }) {
     if (lockState !== "editing") return;
     let cancelled = false;
     const interval = setInterval(async () => {
-      const res = await fetch(`/api/templates/${id}/lock`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "heartbeat" }),
-      });
-      if (cancelled) return;
-      if (res.status === 409) {
-        const resData = (await res.json()) as { lock: LockInfo | null };
-        setLockState("readonly");
-        setLockInfo(resData.lock ?? null);
+      try {
+        const res = await fetch(`/api/templates/${id}/lock`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "heartbeat" }),
+        });
+        if (cancelled) return;
+        if (res.status === 409) {
+          const resData = (await res.json()) as { lock: LockInfo | null };
+          setLockState("readonly");
+          setLockInfo(resData.lock ?? null);
+          return;
+        }
+        if (!res.ok) throw new Error(`heartbeat ${res.status}`);
+        // Recovered: clear any prior warning.
+        heartbeatFailures.current = 0;
+        setConnectionLost(false);
+      } catch {
+        if (cancelled) return;
+        // Network/server failure: after two consecutive misses the lock may have
+        // lapsed (TTL is ~3× the heartbeat interval), so warn the user.
+        heartbeatFailures.current += 1;
+        if (heartbeatFailures.current >= 2) setConnectionLost(true);
       }
     }, LOCK_HEARTBEAT_MS);
     return () => {
@@ -173,7 +190,19 @@ export function EditorApp({ id }: { id: string }) {
       });
       if (res.status === 409) {
         setSaveState("error");
-        setShowConflictModal(true);
+        const conflict = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          lock?: LockInfo | null;
+        };
+        if (conflict.error === "locked") {
+          // Another user holds the lock now — drop to read-only and offer takeover
+          // instead of the overwrite dialog (force-save can't bypass the lock).
+          setLockState("readonly");
+          setLockInfo(conflict.lock ?? null);
+          setShowTakeoverModal(true);
+        } else {
+          setShowConflictModal(true);
+        }
         return false;
       }
       if (!res.ok) throw new Error("Save failed");
@@ -200,6 +229,8 @@ export function EditorApp({ id }: { id: string }) {
     if (res.ok) {
       setLockState("editing");
       setLockInfo(null);
+      heartbeatFailures.current = 0;
+      setConnectionLost(false);
     }
   }, [id]);
 
@@ -260,10 +291,21 @@ export function EditorApp({ id }: { id: string }) {
   // sendBeacon (works even as the page is closing, unlike fetch).
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      navigator.sendBeacon(
+      const body = JSON.stringify({ action: "release" });
+      const queued = navigator.sendBeacon(
         `/api/templates/${id}/lock`,
-        new Blob([JSON.stringify({ action: "release" })], { type: "application/json" }),
+        new Blob([body], { type: "application/json" }),
       );
+      // sendBeacon can refuse to queue (returns false) under resource pressure;
+      // fall back to a keepalive fetch so the lock still releases on close.
+      if (!queued) {
+        void fetch(`/api/templates/${id}/lock`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      }
       if (dirty) {
         e.preventDefault();
         e.returnValue = "";
@@ -335,6 +377,13 @@ export function EditorApp({ id }: { id: string }) {
       {lockState === "readonly" && (
         <Alert variant="warning" className="mb-0 py-2 text-center small rounded-0">
           <strong>{lockInfo?.lockedByName ?? "Someone"}</strong> is editing this template — you are in read-only mode.
+        </Alert>
+      )}
+
+      {/* ── Connection-lost banner: heartbeats are failing, lock may have lapsed ── */}
+      {lockState === "editing" && connectionLost && (
+        <Alert variant="danger" className="mb-0 py-2 text-center small rounded-0">
+          Connection lost — your edit lock may have expired. Save soon or reload; another user could take over.
         </Alert>
       )}
 

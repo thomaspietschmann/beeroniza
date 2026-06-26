@@ -118,6 +118,7 @@ function KitCard({
           <Form className="d-flex gap-1 align-items-center" onSubmit={handleAddColor}>
             <input
               type="color"
+              aria-label="New colour"
               value={newColor}
               onChange={(e) => setNewColor(e.target.value)}
               style={{
@@ -199,6 +200,7 @@ export function BrandKitsManager() {
       <Form className="d-flex gap-2 mt-4" onSubmit={handleCreateKit}>
         <Form.Control
           placeholder="New brand kit name…"
+          aria-label="New brand kit name"
           value={newKitName}
           onChange={(e) => setNewKitName(e.target.value)}
           style={{ maxWidth: "18rem" }}

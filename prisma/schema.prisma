@@ -47,7 +47,7 @@ model User {
   files           StoredFile[]
   usages          Usage[]
   brandKits       BrandKit[]
-  lockedTemplates Template[] @relation("TemplateLock")
+  lockedTemplates TemplateLock[] @relation("TemplateLock")
 
   @@map("users")
 }
@@ -90,19 +90,34 @@ model Template {
   version     Int       @default(1)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  // Soft-lock for concurrent edit prevention. Held by the user currently in the editor;
-  // expires after LOCK_TTL_MS of no heartbeat.
-  lockedById  String?
-  lockedAt    DateTime?
 
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lockedBy    User?             @relation("TemplateLock", fields: [lockedById], references: [id], onDelete: SetNull)
+  // Soft-lock lives in its own row so lock heartbeats never bump this row's
+  // updatedAt (which would break the editor's optimistic-concurrency check).
+  lock        TemplateLock?
   versions    TemplateVersion[]
   generations ImageGeneration[]
   usages      Usage[]
 
   @@index([userId])
   @@map("templates")
+}
+
+// Soft-lock for concurrent edit prevention: one row per locked template, held by
+// the user currently in the editor. The row is created on acquire, refreshed on
+// heartbeat, and deleted on release; a lock older than LOCK_TTL_MS is stale and
+// may be taken over. Kept separate from Template so lock writes don't touch
+// Template.updatedAt.
+model TemplateLock {
+  templateId String   @id
+  lockedById String
+  lockedAt   DateTime
+
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  lockedBy   User     @relation("TemplateLock", fields: [lockedById], references: [id], onDelete: Cascade)
+
+  @@index([lockedById])
+  @@map("template_locks")
 }
 
 // A saved "usage" of a template: a named set of input VALUES (keyed by
