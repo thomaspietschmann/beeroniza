@@ -36,7 +36,7 @@ describe("templateDocSchema + placeholdersOf", () => {
     if (r.success) expect(placeholdersOf(r.data)).toHaveLength(1);
   });
 
-  it("derives placeholders from fabric layers when the index is empty", () => {
+  it("derives placeholders in top-to-bottom layer order when the index is empty", () => {
     const doc = {
       schemaVersion: SCHEMA_VERSION,
       canvas: { width: 1200, height: 630 },
@@ -53,9 +53,9 @@ describe("templateDocSchema + placeholdersOf", () => {
     expect(r.success).toBe(true);
     if (r.success) {
       const ph = placeholdersOf(r.data);
-      expect(ph.map((p) => p.key)).toEqual(["title", "logo"]);
-      expect(ph[0]).toMatchObject({ key: "title", type: "text", label: "Title", defaultValue: "Hi" });
-      expect(ph[1]).toMatchObject({ key: "logo", type: "image", label: "Logo" });
+      expect(ph.map((p) => p.key)).toEqual(["logo", "title"]);
+      expect(ph[0]).toMatchObject({ key: "logo", type: "image", label: "Logo" });
+      expect(ph[1]).toMatchObject({ key: "title", type: "text", label: "Title", defaultValue: "Hi" });
     }
   });
 

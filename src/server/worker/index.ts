@@ -22,7 +22,7 @@ export async function startWorker(): Promise<void> {
 
   const boss = await getBoss();
 
-  await boss.work<RenderJobData>(
+  await boss.work(
     RENDER_QUEUE,
     { localConcurrency: env.workerConcurrency, includeMetadata: true },
     async (jobs: JobWithMetadata<RenderJobData>[]) => {

@@ -97,7 +97,8 @@ The admin account comes preloaded with a starter template library, so you can ex
 
 ### Option B — Local development (without Docker)
 
-You'll need **Node.js 20+** and a running **PostgreSQL** database.
+You'll need **Node.js 22.19+ or 24+** (Node.js 24 is used in Docker and CI) and a
+running **PostgreSQL** database.
 
 ```bash
 # 1. Copy and edit the config

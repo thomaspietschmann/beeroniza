@@ -25,7 +25,7 @@ const nextConfig = {
     // Bootstrap 5.3 still uses @import internally; silence the noise.
     silenceDeprecations: [
       "import",
-      "mixed-decls",
+      "if-function",
       "color-functions",
       "global-builtin",
       "legacy-js-api",

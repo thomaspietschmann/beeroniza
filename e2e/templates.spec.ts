@@ -16,7 +16,8 @@ test.describe("templates grid", () => {
     const list = async () => (await (await page.request.get("/api/templates")).json()).templates as { id: string; name: string }[];
     const before = (await list()).length;
 
-    await page.getByRole("button", { name: /^Duplicate/ }).first().click();
+    await page.getByRole("button", { name: "More actions" }).first().click();
+    await page.getByRole("button", { name: "Duplicate", exact: true }).click();
 
     await expect.poll(async () => (await list()).length, { timeout: 15_000 }).toBe(before + 1);
     const copy = (await list()).find((t) => t.name.endsWith("(copy)"));

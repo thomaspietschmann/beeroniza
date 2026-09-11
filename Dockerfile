@@ -47,7 +47,7 @@ RUN find node_modules -maxdepth 3 -name NOTICE | sort | while IFS= read -r f; do
 #
 # IMPORTANT: the tag MUST match the "playwright" version in package.json so the
 # pre-baked browser matches the API. Bump both together.
-FROM mcr.microsoft.com/playwright:v1.61.0-noble AS runtime
+FROM mcr.microsoft.com/playwright:v1.63.0-noble AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

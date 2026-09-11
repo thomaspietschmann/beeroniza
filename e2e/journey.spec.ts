@@ -23,7 +23,8 @@ test.describe("full journey", () => {
     // 3) Edit a template in the editor — add a shape and save.
     await page.goto(`/editor/${templates[0].id}`);
     await page.waitForFunction(() => !!(window as unknown as { __bnzCanvas?: unknown }).__bnzCanvas);
-    await page.getByRole("button", { name: "Star", exact: true }).click();
+    await page.getByRole("button", { name: "Shapes", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Star", exact: true }).click();
     const saved = page.waitForResponse(
       (r) => r.url().includes("/api/templates/") && r.request().method() === "PUT" && r.ok(),
     );
@@ -48,12 +49,15 @@ test.describe("full journey", () => {
       await expect(page.getByRole("button", { name: "Clear" }).first()).toBeVisible();
     }
 
-    // 5) Trigger generation. We assert the render job is enqueued and enters its
-    //    processing state — the full headless render completes in a production
-    //    build (verified via docker compose); the in-process dev worker is too
-    //    slow to reliably finish within a test, so we don't block on the image.
+    // 5) Exercise the queue, browser renderer and file storage through download.
     await page.getByRole("button", { name: "Generate" }).click();
-    await expect(page.getByText(/Rendering your image|Generating/i).first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("img", { name: "Generated result" })).toBeVisible({ timeout: 90_000 });
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("link", { name: "Download", exact: true }).first().click(),
+    ]);
+    expect(await download.failure()).toBeNull();
+    expect(download.suggestedFilename()).toMatch(/\.png$/);
 
     // 6) Admin page is reachable for this (admin) user.
     await page.goto("/admin");

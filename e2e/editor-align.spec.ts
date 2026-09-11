@@ -11,7 +11,10 @@ test.describe("editor: multi-select + align", () => {
     await page.waitForFunction(() => !!(window as unknown as { __bnzCanvas?: unknown }).__bnzCanvas);
 
     // Add three rectangles.
-    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Rect", exact: true }).click();
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: "Shapes", exact: true }).click();
+      await page.getByRole("menuitem", { name: "Rectangle", exact: true }).click();
+    }
 
     // Spread them to distinct positions (scene coords).
     await page.evaluate(() => {
@@ -49,7 +52,8 @@ test.describe("editor: multi-select + align", () => {
     expect(selCount).toBe(3);
 
     // Align tops, then assert the three rects share the same bounding-box top.
-    await page.getByRole("button", { name: "Align top" }).click();
+    await page.getByRole("button", { name: "Arrange", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Align top", exact: true }).click();
     const tops: number[] = await page.evaluate(() => {
       const c = (window as any).__bnzCanvas;
       const rects = c.getObjects().filter((o: any) => o.bnzName?.startsWith("rect")).slice(-3);
